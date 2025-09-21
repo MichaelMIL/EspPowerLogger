@@ -1,0 +1,13 @@
+# osx
+.DS_Store
+
+# doxygen
+Doxyfile*
+doxygen_sqlite3.db
+html
+*.tmp
+build/
+.vscode/
+.cache/
+.devcontainer/
+*.ci
