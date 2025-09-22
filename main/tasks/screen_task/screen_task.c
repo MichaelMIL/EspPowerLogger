@@ -65,14 +65,14 @@ static void screen_task(void *pvParameters) {
         if (last_mode != SCREEN_MODE_SENSOR_DATA) {
           last_mode = SCREEN_MODE_SENSOR_DATA;
           tft_display_clear_screen();
-          tft_display_sensor_data_table(false,last_voltage, last_current, last_power,last_voltage, last_current, last_power,last_voltage, last_current, last_power);
+          tft_display_sensor_data_table(false,last_voltage, last_current, last_power,last_voltage, last_current, last_power);
           last_update_time = esp_timer_get_time()/1000;
 
         }
         if ( (esp_timer_get_time()/1000 - last_update_time) >= update_interval) {
           last_update_time = esp_timer_get_time()/1000;
           // tft_display_sensor_data(last_voltage, last_current, last_power);
-          tft_display_sensor_data_table(true,last_voltage, last_current, last_power,last_voltage, last_current, last_power,last_voltage, last_current, last_power);
+          tft_display_sensor_data_table(true,last_voltage, last_current, last_power,last_voltage, last_current, last_power);
         }
         break;
 

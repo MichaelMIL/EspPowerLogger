@@ -25,5 +25,7 @@ bool is_sdcard_available(void);
 const char* get_sdcard_mount_point(void);
 size_t get_sdcard_free_space(void);
 size_t get_sdcard_total_space(void);
+esp_err_t init_dynamic_sdcard_detection(void);
+void sdcard_detection_task(void *pvParameters);
 
 #endif // SDCARD_DRIVER_H

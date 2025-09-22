@@ -499,26 +499,22 @@ void tft_display_wifi_status(const char *status, const char *ip) {
 }
 
 // Display sensor data table
-void tft_display_sensor_data_table(bool update_only,float voltage1, float current1, float power1, float voltage2, float current2, float power2, float voltage3, float current3, float power3) {
+void tft_display_sensor_data_table(bool update_only,float voltage1, float current1, float power1, float voltage2, float current2, float power2) {
   // Table dimensions and positioning
   int16_t table_x = 10;
-  int16_t table_y = 30;
+  int16_t table_y = 40;
   int16_t cell_width = 35;
   int16_t cell_height = 20;
   int16_t row_height = 22;
   if (!update_only) {
     
-
-  // Title
-  tft_draw_string(10, 10, "Power Monitor", COLOR_WHITE, COLOR_BLACK, FONT_SMALL);
-
-  
+ 
 
   // Draw table borders
   // Vertical lines
   for (int i = 0; i <= 4; i++) {
     tft_draw_line(table_x + i * cell_width, table_y, 
-                  table_x + i * cell_width, table_y + 4 * row_height, COLOR_WHITE);
+                  table_x + i * cell_width, table_y + 3 * row_height, COLOR_WHITE);
   }
   
   // Horizontal lines
@@ -556,16 +552,6 @@ void tft_display_sensor_data_table(bool update_only,float voltage1, float curren
   snprintf(buffer, sizeof(buffer), "%.1f", power2);
   tft_draw_string(table_x + 3 * cell_width + 2, row_y, buffer, COLOR_RED, COLOR_BLACK, FONT_SMALL);
   
-  // Sensor 3 data (row 4)
-  row_y = table_y + 3 * row_height + 2;
-  tft_draw_string(table_x + 2, row_y, "3", COLOR_WHITE, COLOR_BLACK, FONT_SMALL);
-  snprintf(buffer, sizeof(buffer), "%.2f", voltage3);
-  tft_draw_string(table_x + cell_width + 2, row_y, buffer, COLOR_GREEN, COLOR_BLACK, FONT_SMALL);
-  snprintf(buffer, sizeof(buffer), "%.1f", current3);
-  tft_draw_string(table_x + 2 * cell_width + 2, row_y, buffer, COLOR_BLUE, COLOR_BLACK, FONT_SMALL);
-  snprintf(buffer, sizeof(buffer), "%.1f", power3);
-  tft_draw_string(table_x + 3 * cell_width + 2, row_y, buffer, COLOR_RED, COLOR_BLACK, FONT_SMALL);
-
   // Status indicator
   tft_draw_string_centered(120, "Monitoring...", COLOR_YELLOW, COLOR_BLACK, FONT_SMALL);
 }

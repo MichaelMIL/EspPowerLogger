@@ -23,5 +23,6 @@ esp_err_t clear_log_file(void);
 esp_err_t create_new_log_file(void);
 storage_type_t get_current_storage_type(void);
 const char* get_storage_type_string(void);
+esp_err_t check_and_switch_storage(void);
 
 #endif // DATA_LOGGER_H

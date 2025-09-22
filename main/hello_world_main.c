@@ -55,6 +55,10 @@ void app_main(void) {
   printf("Initializing data logger...\n");
   init_data_logger();
   
+  // Initialize dynamic SD card detection
+  printf("Initializing dynamic SD card detection...\n");
+  init_dynamic_sdcard_detection();
+  
   // Initialize monitoring task
   printf("Starting monitoring task...\n");
   init_monitoring_task();

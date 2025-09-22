@@ -14,6 +14,7 @@
 #include <sys/stat.h>
 #include <time.h>
 #include <errno.h>
+#include <dirent.h>
 
 static const char *TAG = "data_logger";
 static SemaphoreHandle_t g_log_mutex = NULL;
@@ -61,10 +62,38 @@ void generate_log_filename(void) {
     
     const char* base_path = (g_current_storage == STORAGE_SDCARD) ? "/sdcard" : "/spiffs";
     
+    // Create directory path: /base_path/YYYY_MM_DD/
+    char dir_path[128];
+    int dir_result = snprintf(dir_path, sizeof(dir_path), 
+                             "%s/%04d_%02d_%02d",
+                             base_path,
+                             timeinfo.tm_year + 1900, timeinfo.tm_mon + 1, timeinfo.tm_mday);
+    
+    if (dir_result >= sizeof(dir_path)) {
+        ESP_LOGE(TAG, "Directory path too long, truncating");
+        dir_path[sizeof(dir_path) - 1] = '\0';
+    }
+    
+    // Create directory if it doesn't exist
+    struct stat st = {0};
+    if (stat(dir_path, &st) == -1) {
+        // Create directories recursively
+        char temp_path[128];
+        strcpy(temp_path, base_path);
+        
+        // Create directory
+        snprintf(temp_path, sizeof(temp_path), "%s/%04d_%02d_%02d", base_path,  timeinfo.tm_year + 1900, timeinfo.tm_mon + 1, timeinfo.tm_mday);
+        if (stat(temp_path, &st) == -1) {
+            mkdir(temp_path, 0755);
+        }
+    
+    }
+    
+    // Create filename with time: HHMMSS.csv
     int result = snprintf(g_log_filename, sizeof(g_log_filename), 
-                         "%s/%04d%02d%02d.csv",
-                         base_path,
-                         timeinfo.tm_year + 1900, timeinfo.tm_mon + 1, timeinfo.tm_mday);
+                         "%s/%02d%02d%02d.csv",
+                         dir_path,
+                         timeinfo.tm_hour, timeinfo.tm_min, timeinfo.tm_sec);
     
     if (result >= sizeof(g_log_filename)) {
         ESP_LOGE(TAG, "Filename too long, truncating");
@@ -154,6 +183,9 @@ void log_sensor_data(const sensor_data_t *data) {
     }
 
     if (xSemaphoreTake(g_log_mutex, pdMS_TO_TICKS(1000)) == pdTRUE) {
+        // Check if storage has changed and switch if needed
+        check_and_switch_storage();
+        
         FILE *f = fopen(g_log_filename, "a");
         if (f != NULL) {
             // Get human-readable datetime
@@ -278,4 +310,37 @@ const char* get_storage_type_string(void) {
         default:
             return "Unknown";
     }
+}
+
+// Check and switch storage if needed
+esp_err_t check_and_switch_storage(void) {
+    storage_type_t desired_storage = is_sdcard_available() ? STORAGE_SDCARD : STORAGE_SPIFFS;
+    
+    // If storage type has changed, switch
+    if (desired_storage != g_current_storage) {
+        ESP_LOGI(TAG, "Storage type changed from %s to %s", 
+                 get_storage_type_string(), 
+                 desired_storage == STORAGE_SDCARD ? "SD Card" : "SPIFFS");
+        
+        g_current_storage = desired_storage;
+        
+        // Generate new filename for the new storage
+        generate_log_filename();
+        
+        // Create new log file with header
+        FILE *f = fopen(g_log_filename, "w");
+        if (f != NULL) {
+            fprintf(f, "timestamp,datetime,bus_voltage,shunt_voltage,current,power,raw_bus,raw_shunt,raw_current,raw_power,bus_avg,shunt_avg,current_avg,power_avg\n");
+            fclose(f);
+            ESP_LOGI(TAG, "Switched to %s, new log file: %s", 
+                     get_storage_type_string(), g_log_filename);
+            return ESP_OK;
+        } else {
+            ESP_LOGE(TAG, "Failed to create new log file after storage switch: %s (errno: %d)", 
+                     g_log_filename, errno);
+            return ESP_FAIL;
+        }
+    }
+    
+    return ESP_OK;
 }

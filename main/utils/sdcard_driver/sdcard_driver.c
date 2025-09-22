@@ -7,6 +7,9 @@
 #include "driver/spi_common.h"
 #include "driver/gpio.h"
 #include "ff.h"
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
+#include "freertos/queue.h"
 #include <string.h>
 #include <errno.h>
 #include <stdio.h>
@@ -15,22 +18,16 @@
 static const char *TAG = "sdcard_driver";
 static bool s_sdcard_available = false;
 static sdmmc_card_t *s_card = NULL;
+static TaskHandle_t s_detection_task_handle = NULL;
+static bool s_detection_task_running = false;
 
 // Check if SD card is inserted using card detect pin
 static bool check_card_detect(void) {
-    gpio_config_t io_conf = {
-        .intr_type = GPIO_INTR_DISABLE,
-        .mode = GPIO_MODE_INPUT,
-        .pin_bit_mask = (1ULL << PIN_NUM_CD),
-        .pull_down_en = 0,
-        .pull_up_en = 1,  // Enable pull-up resistor
-    };
-    gpio_config(&io_conf);
     
     // Card detect is typically active low (0 when card is present)
     int cd_level = gpio_get_level(PIN_NUM_CD);
-    ESP_LOGI(TAG, "Card detect pin level: %d", cd_level);
-    
+    // ESP_LOGI(TAG, "Card detect pin level: %d", cd_level);
+    is_sd_card_present = (cd_level == 0);
     // Return true if card is detected (pin is low)
     return (cd_level == 0);
 }
@@ -212,4 +209,89 @@ size_t get_sdcard_total_space(void) {
     
     // Return total space in bytes
     return (size_t)(tot_sect * 512);
+}
+
+// Initialize dynamic SD card detection
+esp_err_t init_dynamic_sdcard_detection(void) {
+    if (s_detection_task_running) {
+        ESP_LOGW(TAG, "Dynamic detection already running");
+        return ESP_OK;
+    }
+    
+    ESP_LOGI(TAG, "Starting dynamic SD card detection task");
+    
+    BaseType_t ret = xTaskCreate(
+        sdcard_detection_task,
+        "sdcard_detection",
+        4096,
+        NULL,
+        5,
+        &s_detection_task_handle
+    );
+    
+    if (ret != pdPASS) {
+        ESP_LOGE(TAG, "Failed to create SD card detection task");
+        return ESP_FAIL;
+    }
+    
+    s_detection_task_running = true;
+    ESP_LOGI(TAG, "Dynamic SD card detection task started");
+    return ESP_OK;
+}
+
+// SD card detection task
+void sdcard_detection_task(void *pvParameters) {
+    bool last_card_state = false;
+    bool current_card_state = false;
+    gpio_config_t io_conf = {
+        .intr_type = GPIO_INTR_DISABLE,
+        .mode = GPIO_MODE_INPUT,
+        .pin_bit_mask = (1ULL << PIN_NUM_CD),
+        .pull_down_en = 0,
+        .pull_up_en = 1,  // Enable pull-up resistor
+    };
+    gpio_config(&io_conf);
+    
+    ESP_LOGI(TAG, "SD card detection task started");
+    
+    while (1) {
+        // Check current card state
+        current_card_state = check_card_detect();
+        
+        // If card state changed
+        if (current_card_state != last_card_state) {
+            ESP_LOGI(TAG, "SD card state changed: %s -> %s", 
+                     last_card_state ? "present" : "absent",
+                     current_card_state ? "present" : "absent");
+            
+            if (current_card_state && !s_sdcard_available) {
+                // Card inserted - try to initialize
+                ESP_LOGI(TAG, "SD card inserted, attempting to initialize...");
+                esp_err_t ret = init_sdcard();
+                if (ret == ESP_OK) {
+                    ESP_LOGI(TAG, "SD card initialized successfully after insertion");
+                    // Notify data logger to switch to SD card
+                    // This will be handled by the data logger checking is_sdcard_available()
+                } else {
+                    ESP_LOGW(TAG, "Failed to initialize SD card after insertion");
+                }
+            } else if (!current_card_state && s_sdcard_available) {
+                // Card removed - deinitialize
+                ESP_LOGI(TAG, "SD card removed, deinitializing...");
+                esp_err_t ret = deinit_sdcard();
+                if (ret == ESP_OK) {
+                    ESP_LOGI(TAG, "SD card deinitialized successfully after removal");
+                    // Notify data logger to switch to SPIFFS
+                    // This will be handled by the data logger checking is_sdcard_available()
+                } else {
+                    ESP_LOGE(TAG, "Failed to deinitialize SD card after removal");
+                }
+            }
+            
+            last_card_state = current_card_state;
+        }
+        
+        // Check every 1 second
+        vTaskDelay(pdMS_TO_TICKS(1000));
+    }
 }

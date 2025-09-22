@@ -70,7 +70,7 @@ void tft_draw_string_centered(int16_t y, const char* str, uint16_t color, uint16
 // Display functions
 void tft_display_wifi_status(const char* status, const char* ip);
 void tft_display_sensor_data(float voltage, float current, float power);
-void tft_display_sensor_data_table(bool update_only,float voltage1, float current1, float power1, float voltage2, float current2, float power2, float voltage3, float current3, float power3);
+void tft_display_sensor_data_table(bool update_only,float voltage1, float current1, float power1, float voltage2, float current2, float power2);
 void tft_display_ap_info(const char* ssid, const char* password, const char* ip);
 void tft_display_test_pattern(void);
 void tft_display_clear_screen(void);
