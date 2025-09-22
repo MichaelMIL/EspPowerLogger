@@ -6,6 +6,7 @@ bool g_logging_enabled = false;
 char g_log_filename[128] = "";
 bool s_ap_mode = false;
 bool user_on_web_page = false;
+bool is_sd_card_present = false;
 char wifi_ip[16] = "";
 char ap_ssid[32] = AP_SSID;
 char ap_password[32] = AP_PASS;

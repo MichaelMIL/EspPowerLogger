@@ -732,8 +732,8 @@ void tft_display_draw_status_bar(void) {
     logging_enabled = g_logging_enabled;
     tft_display_log_status(logging_enabled);
   }
-  if (sd_card_present != g_logging_enabled || redraw_status_bar) {
-    sd_card_present = g_logging_enabled;
+  if (sd_card_present != is_sd_card_present || redraw_status_bar) {
+    sd_card_present = is_sd_card_present;
     tft_display_sd_card_icon(sd_card_present);
   }
   if (ap_mode != s_ap_mode|| user_on_web_page != is_user_active || redraw_status_bar) {

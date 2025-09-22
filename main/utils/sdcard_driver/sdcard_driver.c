@@ -1,3 +1,4 @@
+#include "../definitions/definitions.h"
 #include "sdcard_driver.h"
 #include "esp_log.h"
 #include "esp_vfs_fat.h"
@@ -8,6 +9,8 @@
 #include "ff.h"
 #include <string.h>
 #include <errno.h>
+#include <stdio.h>
+
 
 static const char *TAG = "sdcard_driver";
 static bool s_sdcard_available = false;
@@ -155,6 +158,7 @@ esp_err_t deinit_sdcard(void) {
 
 // Check if SD card is available
 bool is_sdcard_available(void) {
+    is_sd_card_present = s_sdcard_available;
     return s_sdcard_available;
 }
 
