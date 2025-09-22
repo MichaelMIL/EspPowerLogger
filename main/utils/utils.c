@@ -1,9 +1,12 @@
 #ifndef UTILS_H
 #define UTILS_H
 
-#include "../definitions.h"
+#include "definitions/definitions.h"
 #include "driver/i2c.h"
-
+#include "esp_chip_info.h"
+#include "esp_flash.h"
+#include "esp_system.h"
+#include "freertos/FreeRTOS.h"
 
 esp_err_t i2c_master_init_with_pins(int sda_pin, int scl_pin)
 {

@@ -1,9 +1,9 @@
 // #include "webserver_task.h"
-#include "definitions.h"
-#include "monitoring_task.h"
-#include "data_logger.h"
-#include "config_manager.h"
-#include "wifi_config.h"
+#include "utils/definitions/definitions.h"
+#include "tasks/monitoring_task/monitoring_task.h"
+#include "tasks/data_logger/data_logger.h"
+#include "utils/config_manager/config_manager.h"
+#include "utils/wifi_config/wifi_config.h"
 #include "esp_http_server.h"
 #include "esp_log.h"
 #include "esp_system.h"
@@ -41,6 +41,7 @@ static esp_err_t serve_file(httpd_req_t *req, const char *file_path, const char 
 
 // Handler for the main page
 static esp_err_t root_handler(httpd_req_t *req) {
+    user_on_web_page = true;
     return serve_file(req, "/spiffs/index.html", "text/html");
 }
 

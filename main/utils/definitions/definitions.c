@@ -4,7 +4,12 @@
 ina219_handle_t ina219;
 bool g_logging_enabled = false;
 char g_log_filename[64] = "";
-
+bool s_ap_mode = false;
+bool user_on_web_page = false;
+char wifi_ip[16] = "";
+char ap_ssid[32] = AP_SSID;
+char ap_password[32] = AP_PASS;
+char ap_ip[16] = AP_IP;
 // Display rotation (0=portrait, 1=landscape, 2=portrait upside down, 3=landscape upside down)
 uint8_t display_rotation = 1; // Default to landscape
 

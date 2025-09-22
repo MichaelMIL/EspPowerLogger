@@ -1,8 +1,8 @@
-#include "definitions.h"
+#include "utils/definitions/definitions.h"
 
-#include "data_logger.h"
-#include "monitoring_task.h"
-#include "time_sync.h"
+#include "tasks/data_logger/data_logger.h"
+#include "tasks/monitoring_task/monitoring_task.h"
+#include "tasks/time_sync/time_sync.h"
 #include "esp_log.h"
 #include "esp_spiffs.h"
 #include "freertos/FreeRTOS.h"

@@ -1,6 +1,6 @@
-#include "wifi_config.h"
-#include "config_manager.h"
-#include "definitions.h"
+#include "utils/wifi_config/wifi_config.h"
+#include "utils/config_manager/config_manager.h"
+#include "utils/definitions/definitions.h"
 #include "esp_event.h"
 #include "esp_log.h"
 #include "esp_netif.h"
@@ -8,7 +8,7 @@
 #include "freertos/event_groups.h"
 #include "freertos/task.h"
 #include "nvs_flash.h"
-#include "tasks/screen_task.h"
+#include "tasks/screen_task/screen_task.h"
 
 static const char *TAG = "wifi_config";
 
@@ -23,7 +23,6 @@ static EventGroupHandle_t s_wifi_event_group;
 #define WIFI_FAIL_BIT BIT1
 
 static int s_retry_num = 0;
-static bool s_ap_mode = false;
 
 static void event_handler(void *arg, esp_event_base_t event_base,
                           int32_t event_id, void *event_data) {
@@ -49,7 +48,7 @@ static void event_handler(void *arg, esp_event_base_t event_base,
     char ip_str[16];
     snprintf(ip_str, sizeof(ip_str), IPSTR, IP2STR(&event->ip_info.ip));
     screen_update_wifi_status("Connected", ip_str);
-    screen_set_mode(SCREEN_MODE_WIFI_STATUS);
+    screen_set_mode(SCREEN_MODE_SENSOR_DATA);
   }
 }
 

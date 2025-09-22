@@ -4,22 +4,18 @@
  * SPDX-License-Identifier: CC0-1.0
  */
 
-#include "definitions.h"
-#include "esp_chip_info.h"
-#include "esp_flash.h"
-#include "esp_system.h"
-#include "freertos/FreeRTOS.h"
+#include "utils/definitions/definitions.h"
+
 #include "freertos/task.h"
 #include "sdkconfig.h"
 #include "utils/utils.c"
-#include "tasks/monitoring_task.h"
-// #include "tasks/webserver_task.h"
-#include "tasks/webserver_simple.c"
-#include "tasks/data_logger.h"
-#include "tasks/time_sync.h"
-#include "tasks/screen_task.h"
-#include "wifi_config.h"
-#include "config_manager.h"
+#include "tasks/monitoring_task/monitoring_task.h"
+#include "tasks/webserver_simple/webserver_simple.c"
+#include "tasks/data_logger/data_logger.h"
+#include "tasks/time_sync/time_sync.h"
+#include "tasks/screen_task/screen_task.h"
+#include "utils/wifi_config/wifi_config.h"
+#include "utils/config_manager/config_manager.h"
 #include <inttypes.h>
 #include <stdio.h>
 

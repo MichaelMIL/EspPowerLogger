@@ -1,5 +1,5 @@
-#include "definitions.h"
-#include "config_manager.h"
+#include "../definitions/definitions.h"
+#include "../config_manager/config_manager.h"
 #include "nvs_flash.h"
 #include "nvs.h"
 #include "esp_log.h"

@@ -1,12 +1,13 @@
-#include "definitions.h"
-#include "screen_task.h"
-#include "../screen_driver.h"
+#include "utils/definitions/definitions.h"
+#include "tasks/screen_task/screen_task.h"
+#include "utils/screen_driver/screen_driver.h"
 #include "esp_log.h"
 #include "freertos/semphr.h"
 #include "freertos/task.h"
 #include <stdbool.h>
 #include <stdio.h>
 #include <string.h>
+#include "esp_timer.h"
 
 static const char *TAG = "screen_task";
 
@@ -19,13 +20,12 @@ static bool screen_power = true;
 
 // Display data
 static char wifi_status[64] = "Connecting...";
-static char wifi_ip[16] = "";
 static float last_voltage = 0.0f;
 static float last_current = 0.0f;
 static float last_power = 0.0f;
-static char ap_ssid[32] = AP_SSID;
-static char ap_password[32] = AP_PASS;
-static char ap_ip[16] = AP_IP;
+
+static uint64_t last_update_time = 0;
+static uint64_t update_interval = 2000; // 2 seconds
 
 // Screen task function
 static void screen_task(void *pvParameters) {
@@ -51,11 +51,8 @@ static void screen_task(void *pvParameters) {
 
     // Take mutex to protect shared data
     if (xSemaphoreTake(screen_mutex, pdMS_TO_TICKS(100)) == pdTRUE) {
-        if (g_logging_enabled) {
-          tft_display_log_status(true);
-        } else {
-          tft_display_log_status(false);
-        }
+      tft_display_draw_status_bar();
+
       switch (current_mode) {
       case SCREEN_MODE_WIFI_STATUS:
         if (last_mode != SCREEN_MODE_WIFI_STATUS) {
@@ -66,8 +63,16 @@ static void screen_task(void *pvParameters) {
 
       case SCREEN_MODE_SENSOR_DATA:
         if (last_mode != SCREEN_MODE_SENSOR_DATA) {
-          tft_display_sensor_data(last_voltage, last_current, last_power);
           last_mode = SCREEN_MODE_SENSOR_DATA;
+          tft_display_clear_screen();
+          tft_display_sensor_data_table(false,last_voltage, last_current, last_power,last_voltage, last_current, last_power,last_voltage, last_current, last_power);
+          last_update_time = esp_timer_get_time()/1000;
+
+        }
+        if ( (esp_timer_get_time()/1000 - last_update_time) >= update_interval) {
+          last_update_time = esp_timer_get_time()/1000;
+          // tft_display_sensor_data(last_voltage, last_current, last_power);
+          tft_display_sensor_data_table(true,last_voltage, last_current, last_power,last_voltage, last_current, last_power,last_voltage, last_current, last_power);
         }
         break;
 

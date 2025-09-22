@@ -46,5 +46,10 @@ extern bool g_logging_enabled;
 extern char g_log_filename[64];
 extern uint8_t display_rotation;
 extern const uint8_t font5x7[][5];
-
+extern bool s_ap_mode;
+extern char wifi_ip[16];
+extern char ap_ssid[32];
+extern char ap_password[32];
+extern char ap_ip[16];
+extern bool user_on_web_page;
 #endif // DEFINITIONS_H

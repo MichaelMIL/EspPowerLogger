@@ -1,7 +1,7 @@
 #ifndef DATA_LOGGER_H
 #define DATA_LOGGER_H
 
-#include "monitoring_task.h"
+#include "tasks/monitoring_task/monitoring_task.h"
 #include "esp_err.h"
 #include <stdbool.h>
 #include <stddef.h>

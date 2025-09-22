@@ -60,6 +60,7 @@ void tft_draw_rect(int16_t x, int16_t y, int16_t w, int16_t h, uint16_t color);
 void tft_fill_rect(int16_t x, int16_t y, int16_t w, int16_t h, uint16_t color);
 void tft_draw_circle(int16_t x0, int16_t y0, int16_t r, uint16_t color);
 void tft_fill_circle(int16_t x0, int16_t y0, int16_t r, uint16_t color);
+void tft_draw_arc(int16_t x0, int16_t y0, int16_t r, int16_t start_angle, int16_t end_angle, uint16_t color);
 
 // Text functions
 void tft_draw_char(int16_t x, int16_t y, char c, uint16_t color, uint16_t bg, uint8_t size);
@@ -69,9 +70,14 @@ void tft_draw_string_centered(int16_t y, const char* str, uint16_t color, uint16
 // Display functions
 void tft_display_wifi_status(const char* status, const char* ip);
 void tft_display_sensor_data(float voltage, float current, float power);
+void tft_display_sensor_data_table(bool update_only,float voltage1, float current1, float power1, float voltage2, float current2, float power2, float voltage3, float current3, float power3);
 void tft_display_ap_info(const char* ssid, const char* password, const char* ip);
 void tft_display_test_pattern(void);
+void tft_display_clear_screen(void);
+void tft_display_draw_status_bar(void);
 void tft_display_log_status(bool logging_enabled);
+void tft_display_sd_card_icon(bool sd_card_present);
+void tft_display_wifi_indicator(bool is_ap_mode, bool user_active);
 
 // Utility functions
 uint16_t tft_color565(uint8_t r, uint8_t g, uint8_t b);
