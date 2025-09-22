@@ -3,7 +3,7 @@
 // INA219 handle definition
 ina219_handle_t ina219;
 bool g_logging_enabled = false;
-char g_log_filename[64] = "";
+char g_log_filename[128] = "";
 bool s_ap_mode = false;
 bool user_on_web_page = false;
 char wifi_ip[16] = "";

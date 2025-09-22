@@ -16,6 +16,7 @@
 #include "tasks/screen_task/screen_task.h"
 #include "utils/wifi_config/wifi_config.h"
 #include "utils/config_manager/config_manager.h"
+#include "utils/sdcard_driver/sdcard_driver.h"
 #include <inttypes.h>
 #include <stdio.h>
 
@@ -31,7 +32,7 @@ void app_main(void) {
   printf("Initializing configuration manager...\n");
   init_config_manager();
   
-  // Initialize screen task
+  // Initialize screen task first (initializes SPI bus)
   printf("Initializing screen task...\n");
   init_screen_task();
   

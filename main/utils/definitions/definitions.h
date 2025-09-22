@@ -43,7 +43,7 @@
 // External declaration of INA219 handle
 extern ina219_handle_t ina219;
 extern bool g_logging_enabled;
-extern char g_log_filename[64];
+extern char g_log_filename[128];
 extern uint8_t display_rotation;
 extern const uint8_t font5x7[][5];
 extern bool s_ap_mode;

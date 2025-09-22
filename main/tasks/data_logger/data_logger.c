@@ -3,6 +3,7 @@
 #include "tasks/data_logger/data_logger.h"
 #include "tasks/monitoring_task/monitoring_task.h"
 #include "tasks/time_sync/time_sync.h"
+#include "utils/sdcard_driver/sdcard_driver.h"
 #include "esp_log.h"
 #include "esp_spiffs.h"
 #include "freertos/FreeRTOS.h"
@@ -12,9 +13,11 @@
 #include <string.h>
 #include <sys/stat.h>
 #include <time.h>
+#include <errno.h>
 
 static const char *TAG = "data_logger";
 static SemaphoreHandle_t g_log_mutex = NULL;
+static storage_type_t g_current_storage = STORAGE_SPIFFS;
 
 
 // Initialize SPIFFS filesystem for logging
@@ -56,18 +59,44 @@ void generate_log_filename(void) {
     time(&now);
     localtime_r(&now, &timeinfo);
     
-    snprintf(g_log_filename, sizeof(g_log_filename), 
-             "/spiffs/sensor_log_%04d%02d%02d_%02d%02d%02d.csv",
-             timeinfo.tm_year + 1900, timeinfo.tm_mon + 1, timeinfo.tm_mday,
-             timeinfo.tm_hour, timeinfo.tm_min, timeinfo.tm_sec);
+    const char* base_path = (g_current_storage == STORAGE_SDCARD) ? "/sdcard" : "/spiffs";
+    
+    int result = snprintf(g_log_filename, sizeof(g_log_filename), 
+                         "%s/%04d%02d%02d.csv",
+                         base_path,
+                         timeinfo.tm_year + 1900, timeinfo.tm_mon + 1, timeinfo.tm_mday);
+    
+    if (result >= sizeof(g_log_filename)) {
+        ESP_LOGE(TAG, "Filename too long, truncating");
+        g_log_filename[sizeof(g_log_filename) - 1] = '\0';
+    }
+    
+    ESP_LOGI(TAG, "Generated filename: %s (length: %d)", g_log_filename, result);
 }
 
 // Initialize data logger
 esp_err_t init_data_logger(void) {
-    // Initialize SPIFFS
-    esp_err_t ret = init_spiffs();
+    esp_err_t ret;
+    
+    // Always initialize SPIFFS first as fallback
+    ESP_LOGI(TAG, "Initializing SPIFFS as fallback storage...");
+    ret = init_spiffs();
     if (ret != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to initialize SPIFFS fallback");
         return ret;
+    }
+    ESP_LOGI(TAG, "SPIFFS initialized successfully");
+    
+    // Try to initialize SD card
+    ESP_LOGI(TAG, "Attempting to initialize SD card...");
+    ret = init_sdcard();
+    if (ret == ESP_OK && is_sdcard_available()) {
+        g_current_storage = STORAGE_SDCARD;
+        ESP_LOGI(TAG, "Using SD card for data logging");
+    } else {
+        // Use SPIFFS as primary storage
+        g_current_storage = STORAGE_SPIFFS;
+        ESP_LOGI(TAG, "Using SPIFFS for data logging");
     }
 
     // Create mutex for thread safety
@@ -81,16 +110,40 @@ esp_err_t init_data_logger(void) {
     generate_log_filename();
 
     // Create CSV header
+    ESP_LOGI(TAG, "Attempting to create log file: %s", g_log_filename);
+    
+    // Check if SD card is still available
+    if (g_current_storage == STORAGE_SDCARD && !is_sdcard_available()) {
+        ESP_LOGE(TAG, "SD card is no longer available, falling back to SPIFFS");
+        g_current_storage = STORAGE_SPIFFS;
+        generate_log_filename();  // Regenerate filename for SPIFFS
+        ESP_LOGI(TAG, "New log file path: %s", g_log_filename);
+    }
+    
     FILE *f = fopen(g_log_filename, "w");
     if (f == NULL) {
-        ESP_LOGE(TAG, "Failed to create log file: %s", g_log_filename);
-        return ESP_FAIL;
+        ESP_LOGE(TAG, "Failed to create log file: %s (errno: %d)", g_log_filename, errno);
+        // Try to fallback to SPIFFS if SD card fails
+        if (g_current_storage == STORAGE_SDCARD) {
+            ESP_LOGW(TAG, "SD card file creation failed, falling back to SPIFFS");
+            g_current_storage = STORAGE_SPIFFS;
+            generate_log_filename();
+            ESP_LOGI(TAG, "Retrying with SPIFFS: %s", g_log_filename);
+            f = fopen(g_log_filename, "w");
+            if (f == NULL) {
+                ESP_LOGE(TAG, "Failed to create log file in SPIFFS: %s (errno: %d)", g_log_filename, errno);
+                return ESP_FAIL;
+            }
+        } else {
+            return ESP_FAIL;
+        }
     }
 
     fprintf(f, "timestamp,datetime,bus_voltage,shunt_voltage,current,power,raw_bus,raw_shunt,raw_current,raw_power,bus_avg,shunt_avg,current_avg,power_avg\n");
     fclose(f);
 
-    ESP_LOGI(TAG, "Data logger initialized. Log file: %s", g_log_filename);
+    ESP_LOGI(TAG, "Data logger initialized. Storage: %s, Log file: %s", 
+             get_storage_type_string(), g_log_filename);
     return ESP_OK;
 }
 
@@ -208,4 +261,21 @@ esp_err_t create_new_log_file(void) {
         ret = ESP_FAIL;
     }
     return ret;
+}
+
+// Get current storage type
+storage_type_t get_current_storage_type(void) {
+    return g_current_storage;
+}
+
+// Get storage type as string
+const char* get_storage_type_string(void) {
+    switch (g_current_storage) {
+        case STORAGE_SDCARD:
+            return "SD Card";
+        case STORAGE_SPIFFS:
+            return "SPIFFS";
+        default:
+            return "Unknown";
+    }
 }
