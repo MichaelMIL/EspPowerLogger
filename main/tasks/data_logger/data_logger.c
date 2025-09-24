@@ -65,7 +65,7 @@ void generate_log_filename(void) {
     // Create directory path: /base_path/YYYY_MM_DD/
     char dir_path[128];
     int dir_result = snprintf(dir_path, sizeof(dir_path), 
-                             "%s/%04d_%02d_%02d",
+                             "%s/%04d%02d%02d",
                              base_path,
                              timeinfo.tm_year + 1900, timeinfo.tm_mon + 1, timeinfo.tm_mday);
     
@@ -82,7 +82,7 @@ void generate_log_filename(void) {
         strcpy(temp_path, base_path);
         
         // Create directory
-        snprintf(temp_path, sizeof(temp_path), "%s/%04d_%02d_%02d", base_path,  timeinfo.tm_year + 1900, timeinfo.tm_mon + 1, timeinfo.tm_mday);
+        snprintf(temp_path, sizeof(temp_path), "%s/%04d%02d%02d", base_path,  timeinfo.tm_year + 1900, timeinfo.tm_mon + 1, timeinfo.tm_mday);
         if (stat(temp_path, &st) == -1) {
             mkdir(temp_path, 0755);
         }
@@ -168,7 +168,7 @@ esp_err_t init_data_logger(void) {
         }
     }
 
-    fprintf(f, "timestamp,datetime,bus_voltage,shunt_voltage,current,power,raw_bus,raw_shunt,raw_current,raw_power,bus_avg,shunt_avg,current_avg,power_avg\n");
+    fprintf(f, "timestamp,datetime,sensor1_bus_voltage,sensor1_shunt_voltage,sensor1_current,sensor1_power,sensor1_raw_bus,sensor1_raw_shunt,sensor1_raw_current,sensor1_raw_power,sensor1_bus_avg,sensor1_shunt_avg,sensor1_current_avg,sensor1_power_avg,sensor2_bus_voltage,sensor2_shunt_voltage,sensor2_current,sensor2_power,sensor2_raw_bus,sensor2_raw_shunt,sensor2_raw_current,sensor2_raw_power,sensor2_bus_avg,sensor2_shunt_avg,sensor2_current_avg,sensor2_power_avg\n");
     fclose(f);
 
     ESP_LOGI(TAG, "Data logger initialized. Storage: %s, Log file: %s", 
@@ -192,21 +192,33 @@ void log_sensor_data(const sensor_data_t *data) {
             char datetime_str[32];
             get_current_time_string(datetime_str, sizeof(datetime_str));
             
-            fprintf(f, "%llu,\"%s\",%.6f,%.6f,%.6f,%.6f,%d,%d,%d,%d,%.6f,%.6f,%.6f,%.6f\n",
+            fprintf(f, "%llu,\"%s\",%.6f,%.6f,%.6f,%.6f,%d,%d,%d,%d,%.6f,%.6f,%.6f,%.6f,%.6f,%.6f,%.6f,%.6f,%d,%d,%d,%d,%.6f,%.6f,%.6f,%.6f\n",
                     data->timestamp,
                     datetime_str,
-                    data->bus_voltage,
-                    data->shunt_voltage,
-                    data->current,
-                    data->power,
-                    data->raw_bus,
-                    data->raw_shunt,
-                    data->raw_current,
-                    data->raw_power,
-                    data->bus_avg,
-                    data->shunt_avg,
-                    data->current_avg,
-                    data->power_avg);
+                    data->sensor1.bus_voltage,
+                    data->sensor1.shunt_voltage,
+                    data->sensor1.current,
+                    data->sensor1.power,
+                    data->sensor1.raw_bus,
+                    data->sensor1.raw_shunt,
+                    data->sensor1.raw_current,
+                    data->sensor1.raw_power,
+                    data->sensor1.bus_avg,
+                    data->sensor1.shunt_avg,
+                    data->sensor1.current_avg,
+                    data->sensor1.power_avg,
+                    data->sensor2.bus_voltage,
+                    data->sensor2.shunt_voltage,
+                    data->sensor2.current,
+                    data->sensor2.power,
+                    data->sensor2.raw_bus,
+                    data->sensor2.raw_shunt,
+                    data->sensor2.raw_current,
+                    data->sensor2.raw_power,
+                    data->sensor2.bus_avg,
+                    data->sensor2.shunt_avg,
+                    data->sensor2.current_avg,
+                    data->sensor2.power_avg);
             fclose(f);
         }
         xSemaphoreGive(g_log_mutex);
@@ -256,7 +268,7 @@ esp_err_t clear_log_file(void) {
     if (xSemaphoreTake(g_log_mutex, pdMS_TO_TICKS(1000)) == pdTRUE) {
         FILE *f = fopen(g_log_filename, "w");
         if (f != NULL) {
-            fprintf(f, "timestamp,datetime,bus_voltage,shunt_voltage,current,power,raw_bus,raw_shunt,raw_current,raw_power,bus_avg,shunt_avg,current_avg,power_avg\n");
+            fprintf(f, "timestamp,datetime,sensor1_bus_voltage,sensor1_shunt_voltage,sensor1_current,sensor1_power,sensor1_raw_bus,sensor1_raw_shunt,sensor1_raw_current,sensor1_raw_power,sensor1_bus_avg,sensor1_shunt_avg,sensor1_current_avg,sensor1_power_avg,sensor2_bus_voltage,sensor2_shunt_voltage,sensor2_current,sensor2_power,sensor2_raw_bus,sensor2_raw_shunt,sensor2_raw_current,sensor2_raw_power,sensor2_bus_avg,sensor2_shunt_avg,sensor2_current_avg,sensor2_power_avg\n");
             fclose(f);
             ESP_LOGI(TAG, "Log file cleared");
         } else {
@@ -281,7 +293,7 @@ esp_err_t create_new_log_file(void) {
         generate_log_filename();
         FILE *f = fopen(g_log_filename, "w");
         if (f != NULL) {
-            fprintf(f, "timestamp,datetime,bus_voltage,shunt_voltage,current,power,raw_bus,raw_shunt,raw_current,raw_power,bus_avg,shunt_avg,current_avg,power_avg\n");
+            fprintf(f, "timestamp,datetime,sensor1_bus_voltage,sensor1_shunt_voltage,sensor1_current,sensor1_power,sensor1_raw_bus,sensor1_raw_shunt,sensor1_raw_current,sensor1_raw_power,sensor1_bus_avg,sensor1_shunt_avg,sensor1_current_avg,sensor1_power_avg,sensor2_bus_voltage,sensor2_shunt_voltage,sensor2_current,sensor2_power,sensor2_raw_bus,sensor2_raw_shunt,sensor2_raw_current,sensor2_raw_power,sensor2_bus_avg,sensor2_shunt_avg,sensor2_current_avg,sensor2_power_avg\n");
             fclose(f);
             ESP_LOGI(TAG, "New log file created: %s", g_log_filename);
         } else {
@@ -330,7 +342,7 @@ esp_err_t check_and_switch_storage(void) {
         // Create new log file with header
         FILE *f = fopen(g_log_filename, "w");
         if (f != NULL) {
-            fprintf(f, "timestamp,datetime,bus_voltage,shunt_voltage,current,power,raw_bus,raw_shunt,raw_current,raw_power,bus_avg,shunt_avg,current_avg,power_avg\n");
+            fprintf(f, "timestamp,datetime,sensor1_bus_voltage,sensor1_shunt_voltage,sensor1_current,sensor1_power,sensor1_raw_bus,sensor1_raw_shunt,sensor1_raw_current,sensor1_raw_power,sensor1_bus_avg,sensor1_shunt_avg,sensor1_current_avg,sensor1_power_avg,sensor2_bus_voltage,sensor2_shunt_voltage,sensor2_current,sensor2_power,sensor2_raw_bus,sensor2_raw_shunt,sensor2_raw_current,sensor2_raw_power,sensor2_bus_avg,sensor2_shunt_avg,sensor2_current_avg,sensor2_power_avg\n");
             fclose(f);
             ESP_LOGI(TAG, "Switched to %s, new log file: %s", 
                      get_storage_type_string(), g_log_filename);

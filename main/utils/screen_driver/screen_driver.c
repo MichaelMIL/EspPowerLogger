@@ -17,6 +17,14 @@ static bool redraw_status_bar = false;
 static bool ap_mode = false;
 static bool is_user_active = false;
 
+static float max_voltage1 = 0;
+static float max_current1 = 0;
+static float max_power1 = 0;
+static float max_voltage2 = 0;
+static float max_current2 = 0;
+static float max_power2 = 0;
+
+
 // Helper function to send command
 static void tft_send_cmd(uint8_t cmd) {
   gpio_set_level(TFT_DC_PIN, 0); // Command mode
@@ -476,6 +484,15 @@ void tft_set_rotation(uint8_t rotation) {
   }
 }
 
+void reset_max_values(void) {
+  max_voltage1 = 0;
+  max_current1 = 0;
+  max_power1 = 0;
+  max_voltage2 = 0;
+  max_current2 = 0;
+  max_power2 = 0;
+}
+
 // Display WiFi status
 void tft_display_wifi_status(const char *status, const char *ip) {
   tft_display_clear_screen();
@@ -503,54 +520,94 @@ void tft_display_sensor_data_table(bool update_only,float voltage1, float curren
   // Table dimensions and positioning
   int16_t table_x = 10;
   int16_t table_y = 40;
-  int16_t cell_width = 35;
+  int16_t cell_width = 42;  // Increased from 35 to compensate for smaller first column
+  int16_t first_cell_width = 22;  // Half width for sensor number column
   int16_t cell_height = 20;
   int16_t row_height = 22;
   if (!update_only) {
     
  
-
+  tft_draw_string(10,30,"Max V: 26V | Max A: 3.2A", COLOR_RED, COLOR_BLACK, FONT_SMALL);
   // Draw table borders
   // Vertical lines
+  int16_t col_positions[5] = {0, first_cell_width, first_cell_width + cell_width, 
+                              first_cell_width + 2 * cell_width, first_cell_width + 3 * cell_width};
   for (int i = 0; i <= 4; i++) {
-    tft_draw_line(table_x + i * cell_width, table_y, 
-                  table_x + i * cell_width, table_y + 3 * row_height, COLOR_WHITE);
+    tft_draw_line(table_x + col_positions[i], table_y, 
+                  table_x + col_positions[i], table_y + 3 * row_height, COLOR_WHITE);
   }
   
   // Horizontal lines
+  int16_t total_width = first_cell_width + 3 * cell_width;
   for (int i = 0; i <= 4; i++) {
     tft_draw_line(table_x, table_y + i * row_height, 
-                  table_x + 4 * cell_width, table_y + i * row_height, COLOR_WHITE);
+                  table_x + total_width, table_y + i * row_height, COLOR_WHITE);
   }
 
   // Header row (first row)
   tft_draw_string(table_x + 2, table_y + 2, "n", COLOR_YELLOW, COLOR_BLACK, FONT_SMALL);
-  tft_draw_string(table_x + cell_width + 2, table_y + 2, "V", COLOR_GREEN, COLOR_BLACK, FONT_SMALL);
-  tft_draw_string(table_x + 2 * cell_width + 2, table_y + 2, "I(mA)", COLOR_BLUE, COLOR_BLACK, FONT_SMALL);
-  tft_draw_string(table_x + 3 * cell_width + 2, table_y + 2, "P(mW)", COLOR_RED, COLOR_BLACK, FONT_SMALL);
+  tft_draw_string(table_x + first_cell_width + 2, table_y + 2, "V", COLOR_GREEN, COLOR_BLACK, FONT_SMALL);
+  tft_draw_string(table_x + first_cell_width + cell_width + 2, table_y + 2, "I(mA)", COLOR_BLUE, COLOR_BLACK, FONT_SMALL);
+  tft_draw_string(table_x + first_cell_width + 2 * cell_width + 2, table_y + 2, "P(mW)", COLOR_RED, COLOR_BLACK, FONT_SMALL);
   }
+
+  if (voltage1 > max_voltage1) {
+    max_voltage1 = voltage1;
+  }
+  if (current1 > max_current1) {
+    max_current1 = current1;
+  }
+  if (power1 > max_power1) {
+    max_power1 = power1;
+  }
+  if (voltage2 > max_voltage2) {
+    max_voltage2 = voltage2;
+  }
+  if (current2 > max_current2) {
+    max_current2 = current2;
+  }
+  if (power2 > max_power2) {
+    max_power2 = power2;
+  }
+
   // Data rows (rows 2-4 for sensors 1-3)
   char buffer[32];
   
   // Sensor 1 data (row 2)
   int16_t row_y = table_y + 1 * row_height + 2;
   tft_draw_string(table_x + 2, row_y, "1", COLOR_WHITE, COLOR_BLACK, FONT_SMALL);
+  tft_draw_string(table_x+2, row_y + 10, "Max", COLOR_WHITE, COLOR_BLACK, FONT_SMALL);
+
   snprintf(buffer, sizeof(buffer), "%.2f", voltage1);
-  tft_draw_string(table_x + cell_width + 2, row_y, buffer, COLOR_GREEN, COLOR_BLACK, FONT_SMALL);
+  tft_draw_string(table_x + first_cell_width + 2, row_y, buffer, COLOR_GREEN, COLOR_BLACK, FONT_SMALL);
+  snprintf(buffer, sizeof(buffer), "%.2f", max_voltage1);
+  tft_draw_string(table_x + first_cell_width + 2, row_y + 10, buffer, COLOR_GREEN, COLOR_BLACK, FONT_SMALL);
   snprintf(buffer, sizeof(buffer), "%.1f", current1);
-  tft_draw_string(table_x + 2 * cell_width + 2, row_y, buffer, COLOR_BLUE, COLOR_BLACK, FONT_SMALL);
+  tft_draw_string(table_x + first_cell_width + cell_width + 2, row_y, buffer, COLOR_BLUE, COLOR_BLACK, FONT_SMALL);
+  snprintf(buffer, sizeof(buffer), "%.1f", max_current1);
+  tft_draw_string(table_x + first_cell_width + cell_width + 2, row_y + 10, buffer, COLOR_BLUE, COLOR_BLACK, FONT_SMALL);
   snprintf(buffer, sizeof(buffer), "%.1f", power1);
-  tft_draw_string(table_x + 3 * cell_width + 2, row_y, buffer, COLOR_RED, COLOR_BLACK, FONT_SMALL);
+  tft_draw_string(table_x + first_cell_width + 2 * cell_width + 2, row_y, buffer, COLOR_RED, COLOR_BLACK, FONT_SMALL);
+  snprintf(buffer, sizeof(buffer), "%.1f", max_power1);
+  tft_draw_string(table_x + first_cell_width + 2 * cell_width + 2, row_y + 10, buffer, COLOR_RED, COLOR_BLACK, FONT_SMALL);
   
   // Sensor 2 data (row 3)
   row_y = table_y + 2 * row_height + 2;
   tft_draw_string(table_x + 2, row_y, "2", COLOR_WHITE, COLOR_BLACK, FONT_SMALL);
+  tft_draw_string(table_x+2, row_y + 10, "Max", COLOR_WHITE, COLOR_BLACK, FONT_SMALL);
+
   snprintf(buffer, sizeof(buffer), "%.2f", voltage2);
-  tft_draw_string(table_x + cell_width + 2, row_y, buffer, COLOR_GREEN, COLOR_BLACK, FONT_SMALL);
+  tft_draw_string(table_x + first_cell_width + 2, row_y, buffer, COLOR_GREEN, COLOR_BLACK, FONT_SMALL);
+  snprintf(buffer, sizeof(buffer), "%.2f", max_voltage2);
+  tft_draw_string(table_x + first_cell_width + 2, row_y + 10, buffer, COLOR_GREEN, COLOR_BLACK, FONT_SMALL);
   snprintf(buffer, sizeof(buffer), "%.1f", current2);
-  tft_draw_string(table_x + 2 * cell_width + 2, row_y, buffer, COLOR_BLUE, COLOR_BLACK, FONT_SMALL);
+  tft_draw_string(table_x + first_cell_width + cell_width + 2, row_y, buffer, COLOR_BLUE, COLOR_BLACK, FONT_SMALL);
+  snprintf(buffer, sizeof(buffer), "%.1f", max_current2);
+  tft_draw_string(table_x + first_cell_width + cell_width + 2, row_y + 10, buffer, COLOR_BLUE, COLOR_BLACK, FONT_SMALL);
   snprintf(buffer, sizeof(buffer), "%.1f", power2);
-  tft_draw_string(table_x + 3 * cell_width + 2, row_y, buffer, COLOR_RED, COLOR_BLACK, FONT_SMALL);
+  tft_draw_string(table_x + first_cell_width + 2 * cell_width + 2, row_y, buffer, COLOR_RED, COLOR_BLACK, FONT_SMALL);
+  snprintf(buffer, sizeof(buffer), "%.1f", max_power2);
+  tft_draw_string(table_x + first_cell_width + 2 * cell_width + 2, row_y + 10, buffer, COLOR_RED, COLOR_BLACK, FONT_SMALL);
   
   // Status indicator
   tft_draw_string_centered(120, "Monitoring...", COLOR_YELLOW, COLOR_BLACK, FONT_SMALL);
@@ -717,6 +774,7 @@ void tft_display_draw_status_bar(void) {
   if (logging_enabled != g_logging_enabled || redraw_status_bar) {
     logging_enabled = g_logging_enabled;
     tft_display_log_status(logging_enabled);
+    reset_max_values();
   }
   if (sd_card_present != is_sd_card_present || redraw_status_bar) {
     sd_card_present = is_sd_card_present;

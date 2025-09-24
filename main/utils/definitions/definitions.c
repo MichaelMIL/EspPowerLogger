@@ -1,7 +1,8 @@
 #include "definitions.h"
 
-// INA219 handle definition
-ina219_handle_t ina219;
+// INA219 handle definitions
+ina219_handle_t ina219_sensor1;
+ina219_handle_t ina219_sensor2;
 bool g_logging_enabled = false;
 char g_log_filename[128] = "";
 bool s_ap_mode = false;

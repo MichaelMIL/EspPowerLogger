@@ -1,0 +1,152 @@
+# ESP32 Power Logger Project - Cursor Rules
+
+## Project Overview
+This is an ESP32-S3 based power consumption monitoring system with dual INA219 sensors, web interface, SD card logging, and TFT display.
+
+## Key Technologies
+- **Framework**: ESP-IDF v5.5
+- **Target**: ESP32-S3
+- **Language**: C (with some C++ components)
+- **Display**: TFT screen with ILI9341 driver
+- **Sensors**: Dual INA219 current/power sensors
+- **Storage**: SD card (SPI) + SPIFFS fallback
+- **Web**: HTTP server with JSON API
+- **Logging**: CSV files with date-based directories
+
+## Project Structure
+```
+main/
+├── hello_world_main.c          # Main application entry point
+├── CMakeLists.txt              # Build configuration
+├── tasks/                      # FreeRTOS tasks
+│   ├── data_logger/            # CSV data logging
+│   ├── monitoring_task/        # Sensor reading
+│   ├── screen_task/            # Display management
+│   ├── time_sync/              # NTP time synchronization
+│   └── webserver_simple/       # HTTP server
+├── utils/                      # Utility modules
+│   ├── config_manager/         # Configuration storage
+│   ├── definitions/            # Global definitions
+│   ├── screen_driver/          # TFT display driver
+│   ├── sdcard_driver/          # SD card management
+│   └── wifi_config/            # WiFi configuration
+└── utils.c                     # Utility functions
+```
+
+## Key Features
+- **Dual INA219 Sensors**: Monitor two power sources simultaneously
+- **Dynamic Storage**: Auto-switch between SD card and SPIFFS
+- **Web Interface**: Real-time monitoring via HTTP
+- **CSV Logging**: Date-based directory structure (YYYYMMDD/HHMMSS.csv)
+- **TFT Display**: Real-time sensor data table
+- **Hot Swapping**: SD card detection and switching
+
+## Code Patterns
+
+### Sensor Data Structure
+```c
+typedef struct {
+    sensor_reading_t sensor1;   // First INA219 sensor
+    sensor_reading_t sensor2;   // Second INA219 sensor
+    uint64_t timestamp;         // Timestamp in milliseconds
+} sensor_data_t;
+```
+
+### Storage Types
+```c
+typedef enum {
+    STORAGE_SPIFFS,
+    STORAGE_SDCARD
+} storage_type_t;
+```
+
+### I2C Addresses
+- Sensor 1: 0x44 (A0=GND, A1=VS)
+- Sensor 2: 0x40 (A0=GND, A1=GND)
+
+## Common Tasks
+
+### Adding New Features
+1. Create task files in `main/tasks/`
+2. Add to `main/CMakeLists.txt`
+3. Initialize in `hello_world_main.c`
+4. Update web interface in `spiffs/index.html`
+
+### Modifying Display
+- Screen driver: `main/utils/screen_driver/screen_driver.c`
+- Screen task: `main/tasks/screen_task/screen_task.c`
+- Function: `tft_display_sensor_data_table()`
+
+### Web Interface Changes
+- HTML: `spiffs/index.html`
+- API: `main/tasks/webserver_simple/webserver_simple.c`
+- Rebuild SPIFFS after changes
+
+### Storage Management
+- SD card: `main/utils/sdcard_driver/sdcard_driver.c`
+- Data logger: `main/tasks/data_logger/data_logger.c`
+- Dynamic switching between SD card and SPIFFS
+
+## Build Commands
+```bash
+# Setup environment
+. $HOME/esp/v5.5/esp-idf/export.sh
+
+# Build project
+idf.py build
+
+# Flash to device
+idf.py flash
+
+# Monitor serial output
+idf.py monitor
+```
+
+## Important Notes
+
+### Memory Management
+- Use `malloc()`/`free()` carefully
+- Check return values from file operations
+- Handle SD card insertion/removal gracefully
+
+### Thread Safety
+- Use mutexes for shared data (`g_sensor_data_mutex`)
+- Protect file operations with semaphores
+- Avoid blocking operations in tasks
+
+### Error Handling
+- Always check return values from I2C operations
+- Handle SD card mount failures gracefully
+- Log errors with appropriate ESP_LOG levels
+
+### File Naming
+- CSV files: `YYYYMMDD/HHMMSS.csv` format
+- Directory creation: Recursive with error checking
+- FAT32 compatibility: Short filenames only
+
+## Debugging Tips
+- Use `ESP_LOGI()`, `ESP_LOGW()`, `ESP_LOGE()` for logging
+- Check `errno` values for file operation errors
+- Monitor serial output for initialization status
+- Web interface shows real-time sensor data
+
+## Common Issues
+1. **SD card not detected**: Check SPI pins and card format
+2. **I2C communication fails**: Verify sensor addresses and wiring
+3. **Display issues**: Check SPI configuration and screen initialization
+4. **File creation fails**: Ensure directory structure exists
+5. **Web interface not loading**: Rebuild SPIFFS after HTML changes
+
+## Development Workflow
+1. Make code changes
+2. Build with `idf.py build`
+3. Flash with `idf.py flash`
+4. Monitor with `idf.py monitor`
+5. Test web interface at device IP
+6. Check CSV logging on SD card/SPIFFS
+
+## File Locations
+- **Web files**: `spiffs/` directory
+- **Configuration**: `sdkconfig`
+- **Build output**: `build/` directory
+- **Logs**: SD card or SPIFFS with date-based directories

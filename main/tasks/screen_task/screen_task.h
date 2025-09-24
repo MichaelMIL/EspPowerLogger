@@ -21,7 +21,7 @@ void screen_set_mode(screen_mode_t mode);
 void screen_update_wifi_status(const char* status, const char* ip);
 
 // Update sensor data display
-void screen_update_sensor_data(float voltage, float current, float power);
+void screen_update_sensor_data(float voltage_sensor1, float current_sensor1, float power_sensor1, float voltage_sensor2, float current_sensor2, float power_sensor2);
 
 // Update AP config display
 void screen_update_ap_config(const char* ssid, const char* password, const char* ip);

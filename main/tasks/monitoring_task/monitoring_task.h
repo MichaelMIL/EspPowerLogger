@@ -4,7 +4,7 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/semphr.h"
 
-// Sensor data structure
+// Individual sensor data structure
 typedef struct {
     float bus_voltage;      // Bus voltage in volts
     float shunt_voltage;    // Shunt voltage in millivolts
@@ -14,11 +14,17 @@ typedef struct {
     int16_t raw_shunt;      // Raw shunt voltage reading
     int16_t raw_current;    // Raw current reading
     int16_t raw_power;      // Raw power reading
-    uint64_t timestamp;     // Timestamp in milliseconds
     float bus_avg;          // Filtered bus voltage
     float shunt_avg;        // Filtered shunt voltage
     float current_avg;      // Filtered current
     float power_avg;        // Filtered power
+} sensor_reading_t;
+
+// Combined sensor data structure
+typedef struct {
+    sensor_reading_t sensor1;   // First INA219 sensor data
+    sensor_reading_t sensor2;   // Second INA219 sensor data
+    uint64_t timestamp;         // Timestamp in milliseconds
 } sensor_data_t;
 
 // Global variables

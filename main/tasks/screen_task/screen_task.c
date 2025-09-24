@@ -20,9 +20,12 @@ static bool screen_power = true;
 
 // Display data
 static char wifi_status[64] = "Connecting...";
-static float last_voltage = 0.0f;
-static float last_current = 0.0f;
-static float last_power = 0.0f;
+static float last_voltage_sensor1 = 0.0f;
+static float last_voltage_sensor2 = 0.0f;
+static float last_current_sensor1 = 0.0f;
+static float last_current_sensor2 = 0.0f;
+static float last_power_sensor1 = 0.0f;
+static float last_power_sensor2 = 0.0f;
 
 static uint64_t last_update_time = 0;
 static uint64_t update_interval = 2000; // 2 seconds
@@ -65,14 +68,14 @@ static void screen_task(void *pvParameters) {
         if (last_mode != SCREEN_MODE_SENSOR_DATA) {
           last_mode = SCREEN_MODE_SENSOR_DATA;
           tft_display_clear_screen();
-          tft_display_sensor_data_table(false,last_voltage, last_current, last_power,last_voltage, last_current, last_power);
+          tft_display_sensor_data_table(false,last_voltage_sensor1, last_current_sensor1, last_power_sensor1,last_voltage_sensor2, last_current_sensor2, last_power_sensor2);
           last_update_time = esp_timer_get_time()/1000;
 
         }
         if ( (esp_timer_get_time()/1000 - last_update_time) >= update_interval) {
           last_update_time = esp_timer_get_time()/1000;
           // tft_display_sensor_data(last_voltage, last_current, last_power);
-          tft_display_sensor_data_table(true,last_voltage, last_current, last_power,last_voltage, last_current, last_power);
+          tft_display_sensor_data_table(true,last_voltage_sensor1, last_current_sensor1, last_power_sensor1,last_voltage_sensor2, last_current_sensor2, last_power_sensor2);
         }
         break;
 
@@ -145,11 +148,14 @@ void screen_update_wifi_status(const char *status, const char *ip) {
 }
 
 // Update sensor data display
-void screen_update_sensor_data(float voltage, float current, float power) {
+void screen_update_sensor_data(float voltage_sensor1, float current_sensor1, float power_sensor1, float voltage_sensor2, float current_sensor2, float power_sensor2) {
   if (xSemaphoreTake(screen_mutex, pdMS_TO_TICKS(100)) == pdTRUE) {
-    last_voltage = voltage;
-    last_current = current;
-    last_power = power;
+    last_voltage_sensor1 = voltage_sensor1;
+    last_current_sensor1 = current_sensor1;
+    last_power_sensor1 = power_sensor1;
+    last_voltage_sensor2 = voltage_sensor2;
+    last_current_sensor2 = current_sensor2;
+    last_power_sensor2 = power_sensor2;
     xSemaphoreGive(screen_mutex);
   }
 }

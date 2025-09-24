@@ -94,21 +94,43 @@ static esp_err_t sensor_data_handler(httpd_req_t *req) {
         return httpd_resp_send(req, error_json, strlen(error_json));
     }
     
-    // Create JSON response
+    // Create JSON response with dual sensor data
     cJSON *json = cJSON_CreateObject();
-    cJSON_AddNumberToObject(json, "bus_voltage", sensor_data.bus_voltage);
-    cJSON_AddNumberToObject(json, "shunt_voltage", sensor_data.shunt_voltage);
-    cJSON_AddNumberToObject(json, "current", sensor_data.current);
-    cJSON_AddNumberToObject(json, "power", sensor_data.power);
-    cJSON_AddNumberToObject(json, "raw_bus", sensor_data.raw_bus);
-    cJSON_AddNumberToObject(json, "raw_shunt", sensor_data.raw_shunt);
-    cJSON_AddNumberToObject(json, "raw_current", sensor_data.raw_current);
-    cJSON_AddNumberToObject(json, "raw_power", sensor_data.raw_power);
+    
+    // Sensor 1 data
+    cJSON *sensor1 = cJSON_CreateObject();
+    cJSON_AddNumberToObject(sensor1, "bus_voltage", sensor_data.sensor1.bus_voltage);
+    cJSON_AddNumberToObject(sensor1, "shunt_voltage", sensor_data.sensor1.shunt_voltage);
+    cJSON_AddNumberToObject(sensor1, "current", sensor_data.sensor1.current);
+    cJSON_AddNumberToObject(sensor1, "power", sensor_data.sensor1.power);
+    cJSON_AddNumberToObject(sensor1, "raw_bus", sensor_data.sensor1.raw_bus);
+    cJSON_AddNumberToObject(sensor1, "raw_shunt", sensor_data.sensor1.raw_shunt);
+    cJSON_AddNumberToObject(sensor1, "raw_current", sensor_data.sensor1.raw_current);
+    cJSON_AddNumberToObject(sensor1, "raw_power", sensor_data.sensor1.raw_power);
+    cJSON_AddNumberToObject(sensor1, "bus_avg", sensor_data.sensor1.bus_avg);
+    cJSON_AddNumberToObject(sensor1, "shunt_avg", sensor_data.sensor1.shunt_avg);
+    cJSON_AddNumberToObject(sensor1, "current_avg", sensor_data.sensor1.current_avg);
+    cJSON_AddNumberToObject(sensor1, "power_avg", sensor_data.sensor1.power_avg);
+    cJSON_AddItemToObject(json, "sensor1", sensor1);
+    
+    // Sensor 2 data
+    cJSON *sensor2 = cJSON_CreateObject();
+    cJSON_AddNumberToObject(sensor2, "bus_voltage", sensor_data.sensor2.bus_voltage);
+    cJSON_AddNumberToObject(sensor2, "shunt_voltage", sensor_data.sensor2.shunt_voltage);
+    cJSON_AddNumberToObject(sensor2, "current", sensor_data.sensor2.current);
+    cJSON_AddNumberToObject(sensor2, "power", sensor_data.sensor2.power);
+    cJSON_AddNumberToObject(sensor2, "raw_bus", sensor_data.sensor2.raw_bus);
+    cJSON_AddNumberToObject(sensor2, "raw_shunt", sensor_data.sensor2.raw_shunt);
+    cJSON_AddNumberToObject(sensor2, "raw_current", sensor_data.sensor2.raw_current);
+    cJSON_AddNumberToObject(sensor2, "raw_power", sensor_data.sensor2.raw_power);
+    cJSON_AddNumberToObject(sensor2, "bus_avg", sensor_data.sensor2.bus_avg);
+    cJSON_AddNumberToObject(sensor2, "shunt_avg", sensor_data.sensor2.shunt_avg);
+    cJSON_AddNumberToObject(sensor2, "current_avg", sensor_data.sensor2.current_avg);
+    cJSON_AddNumberToObject(sensor2, "power_avg", sensor_data.sensor2.power_avg);
+    cJSON_AddItemToObject(json, "sensor2", sensor2);
+    
+    // Common data
     cJSON_AddNumberToObject(json, "timestamp", sensor_data.timestamp);
-    cJSON_AddNumberToObject(json, "bus_avg", sensor_data.bus_avg);
-    cJSON_AddNumberToObject(json, "shunt_avg", sensor_data.shunt_avg);
-    cJSON_AddNumberToObject(json, "current_avg", sensor_data.current_avg);
-    cJSON_AddNumberToObject(json, "power_avg", sensor_data.power_avg);
     
     char *json_string = cJSON_Print(json);
     esp_err_t ret = httpd_resp_send(req, json_string, strlen(json_string));

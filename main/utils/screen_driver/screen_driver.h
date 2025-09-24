@@ -79,8 +79,9 @@ void tft_display_log_status(bool logging_enabled);
 void tft_display_sd_card_icon(bool sd_card_present);
 void tft_display_wifi_indicator(bool is_ap_mode, bool user_active);
 
+
 // Utility functions
 uint16_t tft_color565(uint8_t r, uint8_t g, uint8_t b);
 void tft_set_rotation(uint8_t rotation);
-
+void reset_max_values(void);
 #endif // SCREEN_DRIVER_H

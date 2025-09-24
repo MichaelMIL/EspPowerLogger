@@ -8,6 +8,7 @@
 #include "freertos/semphr.h"
 #include "esp_timer.h"
 #include <stdio.h>
+#include <string.h>
 
 // Global sensor data structure
 sensor_data_t g_sensor_data;
@@ -17,73 +18,113 @@ void monitoring_task(void *pvParameters) {
     printf("Monitoring task started\n");
     
     // Initialize sensor data
-    g_sensor_data.bus_voltage = 0.0f;
-    g_sensor_data.shunt_voltage = 0.0f;
-    g_sensor_data.current = 0.0f;
-    g_sensor_data.power = 0.0f;
-    g_sensor_data.raw_bus = 0;
-    g_sensor_data.raw_shunt = 0;
-    g_sensor_data.raw_current = 0;
-    g_sensor_data.raw_power = 0;
-    g_sensor_data.timestamp = 0;
+    memset(&g_sensor_data, 0, sizeof(sensor_data_t));
     
-    // Initialize filtered values
-    static float bus_avg = 0, shunt_avg = 0, current_avg = 0, power_avg = 0;
+    // Initialize filtered values for both sensors
+    static float sensor1_bus_avg = 0, sensor1_shunt_avg = 0, sensor1_current_avg = 0, sensor1_power_avg = 0;
+    static float sensor2_bus_avg = 0, sensor2_shunt_avg = 0, sensor2_current_avg = 0, sensor2_power_avg = 0;
     static int first_read = 1;
     
     while (1) {
-        // Read raw values with small delays for stability
+        // Read from Sensor 1
         vTaskDelay(10 / portTICK_PERIOD_MS);
-        int16_t raw_bus = ina219_getBusVoltage_raw(&ina219);
+        int16_t sensor1_raw_bus = ina219_getBusVoltage_raw(&ina219_sensor1);
         vTaskDelay(10 / portTICK_PERIOD_MS);
-        int16_t raw_shunt = ina219_getShuntVoltage_raw(&ina219);
+        int16_t sensor1_raw_shunt = ina219_getShuntVoltage_raw(&ina219_sensor1);
         vTaskDelay(10 / portTICK_PERIOD_MS);
-        int16_t raw_current = ina219_getCurrent_raw(&ina219);
+        int16_t sensor1_raw_current = ina219_getCurrent_raw(&ina219_sensor1);
         vTaskDelay(10 / portTICK_PERIOD_MS);
-        int16_t raw_power = ina219_getPower_raw(&ina219);
+        int16_t sensor1_raw_power = ina219_getPower_raw(&ina219_sensor1);
         
-        // Convert to float values using proper conversion factors
-        float bus_voltage = raw_bus * 0.004f;    // Convert from 4mV units to volts
-        float shunt_voltage = raw_shunt * 0.01f; // Convert to millivolts
-        float current = (raw_current / 10.0f) - 6.0;     // Convert using current divider (10mA per bit)
-        float power = raw_power * 2.0f;          // Convert using power multiplier (2mW per bit)
+        // Read from Sensor 2
+        vTaskDelay(10 / portTICK_PERIOD_MS);
+        int16_t sensor2_raw_bus = ina219_getBusVoltage_raw(&ina219_sensor2);
+        vTaskDelay(10 / portTICK_PERIOD_MS);
+        int16_t sensor2_raw_shunt = ina219_getShuntVoltage_raw(&ina219_sensor2);
+        vTaskDelay(10 / portTICK_PERIOD_MS);
+        int16_t sensor2_raw_current = ina219_getCurrent_raw(&ina219_sensor2);
+        vTaskDelay(10 / portTICK_PERIOD_MS);
+        int16_t sensor2_raw_power = ina219_getPower_raw(&ina219_sensor2);
         
-        // Apply filtering (simple exponential moving average)
+        // Convert Sensor 1 values
+        float sensor1_bus_voltage = sensor1_raw_bus * 0.004f;    // Convert from 4mV units to volts
+        float sensor1_shunt_voltage = sensor1_raw_shunt * 0.01f; // Convert to millivolts
+        float sensor1_current = (sensor1_raw_current / 10.0f) - 6.0;     // Convert using current divider (10mA per bit)
+        float sensor1_power = sensor1_raw_power * 2.0f;          // Convert using power multiplier (2mW per bit)
+        
+        // Convert Sensor 2 values
+        float sensor2_bus_voltage = sensor2_raw_bus * 0.004f;    // Convert from 4mV units to volts
+        float sensor2_shunt_voltage = sensor2_raw_shunt * 0.01f; // Convert to millivolts
+        float sensor2_current = (sensor2_raw_current / 10.0f) - 6.0;     // Convert using current divider (10mA per bit)
+        float sensor2_power = sensor2_raw_power * 2.0f;          // Convert using power multiplier (2mW per bit)
+        
+        // Apply filtering (simple exponential moving average) for both sensors
         if (first_read) {
-            bus_avg = bus_voltage;
-            shunt_avg = shunt_voltage;
-            current_avg = current;
-            power_avg = power;
+            // Initialize Sensor 1 averages
+            sensor1_bus_avg = sensor1_bus_voltage;
+            sensor1_shunt_avg = sensor1_shunt_voltage;
+            sensor1_current_avg = sensor1_current;
+            sensor1_power_avg = sensor1_power;
+            
+            // Initialize Sensor 2 averages
+            sensor2_bus_avg = sensor2_bus_voltage;
+            sensor2_shunt_avg = sensor2_shunt_voltage;
+            sensor2_current_avg = sensor2_current;
+            sensor2_power_avg = sensor2_power;
+            
             first_read = 0;
         } else {
-            // Simple exponential moving average (alpha = 0.3)
-            bus_avg = 0.7f * bus_avg + 0.3f * bus_voltage;
-            shunt_avg = 0.7f * shunt_avg + 0.3f * shunt_voltage;
-            current_avg = 0.7f * current_avg + 0.3f * current;
-            power_avg = 0.7f * power_avg + 0.3f * power;
+            // Filter Sensor 1 (alpha = 0.3)
+            sensor1_bus_avg = 0.7f * sensor1_bus_avg + 0.3f * sensor1_bus_voltage;
+            sensor1_shunt_avg = 0.7f * sensor1_shunt_avg + 0.3f * sensor1_shunt_voltage;
+            sensor1_current_avg = 0.7f * sensor1_current_avg + 0.3f * sensor1_current;
+            sensor1_power_avg = 0.7f * sensor1_power_avg + 0.3f * sensor1_power;
+            
+            // Filter Sensor 2 (alpha = 0.3)
+            sensor2_bus_avg = 0.7f * sensor2_bus_avg + 0.3f * sensor2_bus_voltage;
+            sensor2_shunt_avg = 0.7f * sensor2_shunt_avg + 0.3f * sensor2_shunt_voltage;
+            sensor2_current_avg = 0.7f * sensor2_current_avg + 0.3f * sensor2_current;
+            sensor2_power_avg = 0.7f * sensor2_power_avg + 0.3f * sensor2_power;
         }
         
         // Update global sensor data with mutex protection
         if (xSemaphoreTake(g_sensor_data_mutex, portMAX_DELAY) == pdTRUE) {
-            g_sensor_data.bus_voltage = bus_voltage;
-            g_sensor_data.shunt_voltage = shunt_voltage;
-            g_sensor_data.current = current;
-            g_sensor_data.power = power;
-            g_sensor_data.raw_bus = raw_bus;
-            g_sensor_data.raw_shunt = raw_shunt;
-            g_sensor_data.raw_current = raw_current;
-            g_sensor_data.raw_power = raw_power;
+            // Store Sensor 1 data
+            g_sensor_data.sensor1.bus_voltage = sensor1_bus_voltage;
+            g_sensor_data.sensor1.shunt_voltage = sensor1_shunt_voltage;
+            g_sensor_data.sensor1.current = sensor1_current;
+            g_sensor_data.sensor1.power = sensor1_power;
+            g_sensor_data.sensor1.raw_bus = sensor1_raw_bus;
+            g_sensor_data.sensor1.raw_shunt = sensor1_raw_shunt;
+            g_sensor_data.sensor1.raw_current = sensor1_raw_current;
+            g_sensor_data.sensor1.raw_power = sensor1_raw_power;
+            g_sensor_data.sensor1.bus_avg = sensor1_bus_avg;
+            g_sensor_data.sensor1.shunt_avg = sensor1_shunt_avg;
+            g_sensor_data.sensor1.current_avg = sensor1_current_avg;
+            g_sensor_data.sensor1.power_avg = sensor1_power_avg;
+            
+            // Store Sensor 2 data
+            g_sensor_data.sensor2.bus_voltage = sensor2_bus_voltage;
+            g_sensor_data.sensor2.shunt_voltage = sensor2_shunt_voltage;
+            g_sensor_data.sensor2.current = sensor2_current;
+            g_sensor_data.sensor2.power = sensor2_power;
+            g_sensor_data.sensor2.raw_bus = sensor2_raw_bus;
+            g_sensor_data.sensor2.raw_shunt = sensor2_raw_shunt;
+            g_sensor_data.sensor2.raw_current = sensor2_raw_current;
+            g_sensor_data.sensor2.raw_power = sensor2_raw_power;
+            g_sensor_data.sensor2.bus_avg = sensor2_bus_avg;
+            g_sensor_data.sensor2.shunt_avg = sensor2_shunt_avg;
+            g_sensor_data.sensor2.current_avg = sensor2_current_avg;
+            g_sensor_data.sensor2.power_avg = sensor2_power_avg;
+            
+            // Store timestamp
             g_sensor_data.timestamp = esp_timer_get_time() / 1000; // Convert to milliseconds
-            g_sensor_data.bus_avg = bus_avg;
-            g_sensor_data.shunt_avg = shunt_avg;
-            g_sensor_data.current_avg = current_avg;
-            g_sensor_data.power_avg = power_avg;
             
             // Log data if logging is enabled
             log_sensor_data(&g_sensor_data);
             
-            // Update screen with sensor data
-            screen_update_sensor_data(bus_voltage, current, power);
+            // Update screen with sensor data (using sensor 1 for now)
+            screen_update_sensor_data(sensor1_bus_voltage, sensor1_current, sensor1_power, sensor2_bus_voltage, sensor2_current, sensor2_power);
             
             xSemaphoreGive(g_sensor_data_mutex);
         }
@@ -91,8 +132,9 @@ void monitoring_task(void *pvParameters) {
         // Print debug info every 10 seconds
         static int debug_counter = 0;
         if (++debug_counter >= 10) {
-            printf("Sensor: Bus=%.3fV, Shunt=%.3fmV, Current=%.3fmA, Power=%.3fmW\n", 
-                   bus_avg, shunt_avg, current_avg, power_avg);
+            printf("Sensor1: Bus=%.3fV, Current=%.3fmA, Power=%.3fmW | Sensor2: Bus=%.3fV, Current=%.3fmA, Power=%.3fmW\n", 
+                   sensor1_bus_avg, sensor1_current_avg, sensor1_power_avg,
+                   sensor2_bus_avg, sensor2_current_avg, sensor2_power_avg);
             debug_counter = 0;
         }
         

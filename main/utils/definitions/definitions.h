@@ -18,9 +18,10 @@
 #define I2C_ALT_SCL_IO              8
 #define I2C_ALT_SDA_IO              9
 
-// INA219 configuration - Using Adafruit library style
-// Default I2C address for INA219
-#define INA219_DEFAULT_ADDRESS      INA219_ADDRESS_GND_GND
+// INA219 configuration - Using INA219 library style
+// I2C addresses for INA219 sensors
+#define INA219_SENSOR1_ADDRESS      INA219_CALC_ADDRESS(0, 1)  // 0x44 (A0=GND, A1=VS)
+#define INA219_SENSOR2_ADDRESS      INA219_CALC_ADDRESS(0, 0)  // 0x40 (A0=GND, A1=GND)
 
 
 
@@ -40,8 +41,9 @@
 #define MAX_SSID_LEN 32
 #define MAX_PASS_LEN 64
 
-// External declaration of INA219 handle
-extern ina219_handle_t ina219;
+// External declaration of INA219 handles
+extern ina219_handle_t ina219_sensor1;
+extern ina219_handle_t ina219_sensor2;
 extern bool g_logging_enabled;
 extern char g_log_filename[128];
 extern bool is_sd_card_present;
