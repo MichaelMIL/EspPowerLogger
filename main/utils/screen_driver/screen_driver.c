@@ -5,6 +5,7 @@
 #include <stdbool.h>
 #include <stdio.h>
 #include <string.h>
+#include <math.h>
 
 static const char *TAG = "screen_driver";
 
@@ -516,6 +517,11 @@ void tft_display_wifi_status(const char *status, const char *ip) {
 }
 
 // Display sensor data table
+// Static variables to track previous values for change detection
+static float prev_voltage1 = -1, prev_current1 = -1, prev_power1 = -1;
+static float prev_voltage2 = -1, prev_current2 = -1, prev_power2 = -1;
+static bool table_initialized = false;
+
 void tft_display_sensor_data_table(bool update_only,float voltage1, float current1, float power1, float voltage2, float current2, float power2) {
   // Table dimensions and positioning
   int16_t table_x = 10;
@@ -524,31 +530,44 @@ void tft_display_sensor_data_table(bool update_only,float voltage1, float curren
   int16_t first_cell_width = 22;  // Half width for sensor number column
   int16_t cell_height = 20;
   int16_t row_height = 22;
-  if (!update_only) {
-    
- 
-  tft_draw_string(10,30,"Max V: 26V | Max A: 3.2A", COLOR_RED, COLOR_BLACK, FONT_SMALL);
-  // Draw table borders
-  // Vertical lines
-  int16_t col_positions[5] = {0, first_cell_width, first_cell_width + cell_width, 
-                              first_cell_width + 2 * cell_width, first_cell_width + 3 * cell_width};
-  for (int i = 0; i <= 4; i++) {
-    tft_draw_line(table_x + col_positions[i], table_y, 
-                  table_x + col_positions[i], table_y + 3 * row_height, COLOR_WHITE);
+  
+  // Check if values have changed (with small tolerance to avoid constant updates)
+  bool values_changed = (fabs(voltage1 - prev_voltage1) > 0.01) || 
+                       (fabs(current1 - prev_current1) > 0.1) || 
+                       (fabs(power1 - prev_power1) > 0.1) ||
+                       (fabs(voltage2 - prev_voltage2) > 0.01) || 
+                       (fabs(current2 - prev_current2) > 0.1) || 
+                       (fabs(power2 - prev_power2) > 0.1);
+  
+  // Skip update if values haven't changed and we're in update-only mode
+  if (update_only && !values_changed && table_initialized) {
+    return;
   }
   
-  // Horizontal lines
-  int16_t total_width = first_cell_width + 3 * cell_width;
-  for (int i = 0; i <= 4; i++) {
-    tft_draw_line(table_x, table_y + i * row_height, 
-                  table_x + total_width, table_y + i * row_height, COLOR_WHITE);
-  }
+  if (!update_only || !table_initialized) {
+    table_initialized = true;
+    tft_draw_string(10,30,"Max V: 26V | Max A: 3.2A", COLOR_RED, COLOR_BLACK, FONT_SMALL);
+    // Draw table borders
+    // Vertical lines
+    int16_t col_positions[5] = {0, first_cell_width, first_cell_width + cell_width, 
+                                first_cell_width + 2 * cell_width, first_cell_width + 3 * cell_width};
+    for (int i = 0; i <= 4; i++) {
+      tft_draw_line(table_x + col_positions[i], table_y, 
+                    table_x + col_positions[i], table_y + 3 * row_height, COLOR_WHITE);
+    }
+    
+    // Horizontal lines
+    int16_t total_width = first_cell_width + 3 * cell_width;
+    for (int i = 0; i <= 4; i++) {
+      tft_draw_line(table_x, table_y + i * row_height, 
+                    table_x + total_width, table_y + i * row_height, COLOR_WHITE);
+    }
 
-  // Header row (first row)
-  tft_draw_string(table_x + 2, table_y + 2, "n", COLOR_YELLOW, COLOR_BLACK, FONT_SMALL);
-  tft_draw_string(table_x + first_cell_width + 2, table_y + 2, "V", COLOR_GREEN, COLOR_BLACK, FONT_SMALL);
-  tft_draw_string(table_x + first_cell_width + cell_width + 2, table_y + 2, "I(mA)", COLOR_BLUE, COLOR_BLACK, FONT_SMALL);
-  tft_draw_string(table_x + first_cell_width + 2 * cell_width + 2, table_y + 2, "P(mW)", COLOR_RED, COLOR_BLACK, FONT_SMALL);
+    // Header row (first row)
+    tft_draw_string(table_x + 2, table_y + 2, "n", COLOR_YELLOW, COLOR_BLACK, FONT_SMALL);
+    tft_draw_string(table_x + first_cell_width + 2, table_y + 2, "V", COLOR_GREEN, COLOR_BLACK, FONT_SMALL);
+    tft_draw_string(table_x + first_cell_width + cell_width + 2, table_y + 2, "I(mA)", COLOR_BLUE, COLOR_BLACK, FONT_SMALL);
+    tft_draw_string(table_x + first_cell_width + 2 * cell_width + 2, table_y + 2, "P(mW)", COLOR_RED, COLOR_BLACK, FONT_SMALL);
   }
 
   if (voltage1 > max_voltage1) {
@@ -612,6 +631,14 @@ void tft_display_sensor_data_table(bool update_only,float voltage1, float curren
 
   // Status indicator
   tft_draw_string_centered(120, "Monitoring...", COLOR_YELLOW, COLOR_BLACK, FONT_SMALL);
+  
+  // Store current values for next comparison
+  prev_voltage1 = voltage1;
+  prev_current1 = current1;
+  prev_power1 = power1;
+  prev_voltage2 = voltage2;
+  prev_current2 = current2;
+  prev_power2 = power2;
 }
 
 // Display sensor data (legacy function for single sensor)

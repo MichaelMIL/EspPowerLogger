@@ -28,7 +28,7 @@ static float last_power_sensor1 = 0.0f;
 static float last_power_sensor2 = 0.0f;
 
 static uint64_t last_update_time = 0;
-static uint64_t update_interval = 2000; // 2 seconds
+static uint64_t update_interval = 500; // 500ms for faster updates
 
 // Screen task function
 static void screen_task(void *pvParameters) {
