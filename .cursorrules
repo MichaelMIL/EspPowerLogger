@@ -23,7 +23,8 @@ main/
 │   ├── monitoring_task/        # Sensor reading
 │   ├── screen_task/            # Display management
 │   ├── time_sync/              # NTP time synchronization
-│   └── webserver_simple/       # HTTP server
+│   ├── webserver_simple/       # HTTP server
+│   └── button_task/            # Button input handling
 ├── utils/                      # Utility modules
 │   ├── config_manager/         # Configuration storage
 │   ├── definitions/            # Global definitions
@@ -36,10 +37,16 @@ main/
 ## Key Features
 - **Dual INA219 Sensors**: Monitor two power sources simultaneously
 - **Dynamic Storage**: Auto-switch between SD card and SPIFFS
+  - **Hot-swap**: Insert/remove SD card anytime
+  - **Smart switching**: New files automatically use best available storage
 - **Web Interface**: Real-time monitoring via HTTP
 - **CSV Logging**: Date-based directory structure (YYYYMMDD/HHMMSS.csv)
 - **TFT Display**: Real-time sensor data table
 - **Hot Swapping**: SD card detection and switching
+- **Button Control**: Toggle logging with physical button (GPIO 7)
+  - **Short Press** (200ms-3s): Toggle logging on/off
+  - **Long Press** (3s-15s): Stop logging and create new log file
+  - **Reboot Press** (15s+): Reboot device
 
 ## Code Patterns
 
@@ -136,6 +143,7 @@ idf.py monitor
 3. **Display issues**: Check SPI configuration and screen initialization
 4. **File creation fails**: Ensure directory structure exists
 5. **Web interface not loading**: Rebuild SPIFFS after HTML changes
+6. **SD card hot-swap fails**: SPI bus sharing handled automatically between screen and SD card
 
 ## Development Workflow
 1. Make code changes

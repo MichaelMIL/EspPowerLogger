@@ -608,7 +608,8 @@ void tft_display_sensor_data_table(bool update_only,float voltage1, float curren
   tft_draw_string(table_x + first_cell_width + 2 * cell_width + 2, row_y, buffer, COLOR_RED, COLOR_BLACK, FONT_SMALL);
   snprintf(buffer, sizeof(buffer), "%.1f", max_power2);
   tft_draw_string(table_x + first_cell_width + 2 * cell_width + 2, row_y + 10, buffer, COLOR_RED, COLOR_BLACK, FONT_SMALL);
-  
+  tft_draw_string(5,110, g_log_filename, COLOR_YELLOW, COLOR_BLACK, FONT_SMALL);
+
   // Status indicator
   tft_draw_string_centered(120, "Monitoring...", COLOR_YELLOW, COLOR_BLACK, FONT_SMALL);
 }

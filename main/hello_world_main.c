@@ -14,6 +14,7 @@
 #include "tasks/data_logger/data_logger.h"
 #include "tasks/time_sync/time_sync.h"
 #include "tasks/screen_task/screen_task.h"
+#include "tasks/button_task/button_task.h"
 #include "utils/wifi_config/wifi_config.h"
 #include "utils/config_manager/config_manager.h"
 #include "utils/sdcard_driver/sdcard_driver.h"
@@ -130,6 +131,10 @@ void app_main(void) {
   // Initialize webserver task
   printf("Starting webserver task...\n");
   init_webserver_task();
+  
+  // Initialize button task
+  printf("Starting button task...\n");
+  init_button_task();
   
   printf("\nSystem initialized successfully!\n");
   printf("Web interface available at: http://<ESP32_IP>\n");

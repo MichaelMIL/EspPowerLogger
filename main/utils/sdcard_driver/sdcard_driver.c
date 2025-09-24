@@ -69,9 +69,14 @@ esp_err_t init_sdcard(void) {
     
     ret = spi_bus_initialize(host.slot, &bus_cfg, SDSPI_DEFAULT_DMA);
     if (ret != ESP_OK) {
-        ESP_LOGE(TAG, "Failed to initialize SPI bus: %s", esp_err_to_name(ret));
-        s_sdcard_available = false;
-        return ret;
+        if (ret == ESP_ERR_INVALID_STATE) {
+            ESP_LOGW(TAG, "SPI bus already initialized, continuing with SD card initialization...");
+            // SPI bus is already initialized (probably by screen driver), continue
+        } else {
+            ESP_LOGE(TAG, "Failed to initialize SPI bus: %s", esp_err_to_name(ret));
+            s_sdcard_available = false;
+            return ret;
+        }
     }
     
     // This initializes the slot without card detect (CD) and write protect (WP) signals
@@ -140,11 +145,16 @@ esp_err_t deinit_sdcard(void) {
         return ret;
     }
     
-    // Deinitialize the SPI bus
+    // Deinitialize the SPI bus (only if we initialized it)
     ret = spi_bus_free(SPI3_HOST);
     if (ret != ESP_OK) {
-        ESP_LOGE(TAG, "Failed to free SPI bus: %s", esp_err_to_name(ret));
-        return ret;
+        if (ret == ESP_ERR_INVALID_STATE) {
+            ESP_LOGW(TAG, "SPI bus may be in use by other components, continuing...");
+            // SPI bus is still in use by other components (like screen driver), this is OK
+        } else {
+            ESP_LOGE(TAG, "Failed to free SPI bus: %s", esp_err_to_name(ret));
+            return ret;
+        }
     }
     
     s_sdcard_available = false;

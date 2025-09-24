@@ -290,6 +290,9 @@ esp_err_t create_new_log_file(void) {
 
     esp_err_t ret = ESP_OK;
     if (xSemaphoreTake(g_log_mutex, pdMS_TO_TICKS(1000)) == pdTRUE) {
+        // Check if storage has changed (e.g., SD card inserted)
+        check_and_switch_storage();
+        
         generate_log_filename();
         FILE *f = fopen(g_log_filename, "w");
         if (f != NULL) {
