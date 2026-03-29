@@ -520,6 +520,8 @@ void tft_display_wifi_status(const char *status, const char *ip) {
 // Static variables to track previous values for change detection
 static float prev_voltage1 = -1, prev_current1 = -1, prev_power1 = -1;
 static float prev_voltage2 = -1, prev_current2 = -1, prev_power2 = -1;
+static float prev_max_voltage1 = -1, prev_max_current1 = -1, prev_max_power1 = -1;
+static float prev_max_voltage2 = -1, prev_max_current2 = -1, prev_max_power2 = -1;
 static bool table_initialized = false;
 
 void tft_display_sensor_data_table(bool update_only,float voltage1, float current1, float power1, float voltage2, float current2, float power2) {
@@ -592,45 +594,107 @@ void tft_display_sensor_data_table(bool update_only,float voltage1, float curren
   // Data rows (rows 2-4 for sensors 1-3)
   char buffer[32];
   
-  // Sensor 1 data (row 2)
+  // Sensor 1 data (row 2) - only draw if values changed
   int16_t row_y = table_y + 1 * row_height + 2;
-  tft_draw_string(table_x + 2, row_y, "1", COLOR_WHITE, COLOR_BLACK, FONT_SMALL);
-  tft_draw_string(table_x+2, row_y + 10, "Max", COLOR_WHITE, COLOR_BLACK, FONT_SMALL);
-
-  snprintf(buffer, sizeof(buffer), "%.2f", voltage1);
-  tft_draw_string(table_x + first_cell_width + 2, row_y, buffer, COLOR_GREEN, COLOR_BLACK, FONT_SMALL);
-  snprintf(buffer, sizeof(buffer), "%.2f", max_voltage1);
-  tft_draw_string(table_x + first_cell_width + 2, row_y + 10, buffer, COLOR_GREEN, COLOR_BLACK, FONT_SMALL);
-  snprintf(buffer, sizeof(buffer), "%.1f", current1);
-  tft_draw_string(table_x + first_cell_width + cell_width + 2, row_y, buffer, COLOR_BLUE, COLOR_BLACK, FONT_SMALL);
-  snprintf(buffer, sizeof(buffer), "%.1f", max_current1);
-  tft_draw_string(table_x + first_cell_width + cell_width + 2, row_y + 10, buffer, COLOR_BLUE, COLOR_BLACK, FONT_SMALL);
-  snprintf(buffer, sizeof(buffer), "%.1f", power1);
-  tft_draw_string(table_x + first_cell_width + 2 * cell_width + 2, row_y, buffer, COLOR_RED, COLOR_BLACK, FONT_SMALL);
-  snprintf(buffer, sizeof(buffer), "%.1f", max_power1);
-  tft_draw_string(table_x + first_cell_width + 2 * cell_width + 2, row_y + 10, buffer, COLOR_RED, COLOR_BLACK, FONT_SMALL);
   
-  // Sensor 2 data (row 3)
+  // Only draw static elements on first initialization
+  if (!table_initialized || !update_only) {
+    tft_draw_string(table_x + 2, row_y, "1", COLOR_WHITE, COLOR_BLACK, FONT_SMALL);
+    tft_draw_string(table_x+2, row_y + 10, "Max", COLOR_WHITE, COLOR_BLACK, FONT_SMALL);
+  }
+  
+  // Only update voltage1 if it changed
+  if (fabs(voltage1 - prev_voltage1) > 0.01 || !table_initialized || !update_only) {
+    snprintf(buffer, sizeof(buffer), "%.2f", voltage1);
+    tft_draw_string(table_x + first_cell_width + 2, row_y, buffer, COLOR_GREEN, COLOR_BLACK, FONT_SMALL);
+  }
+  
+  // Only update max_voltage1 if it changed
+  if (fabs(max_voltage1 - prev_max_voltage1) > 0.01 || !table_initialized || !update_only) {
+    snprintf(buffer, sizeof(buffer), "%.2f", max_voltage1);
+    tft_draw_string(table_x + first_cell_width + 2, row_y + 10, buffer, COLOR_GREEN, COLOR_BLACK, FONT_SMALL);
+  }
+  
+  // Only update current1 if it changed
+  if (fabs(current1 - prev_current1) > 0.1 || !table_initialized || !update_only) {
+    snprintf(buffer, sizeof(buffer), "%.1f", current1);
+    tft_draw_string(table_x + first_cell_width + cell_width + 2, row_y, buffer, COLOR_BLUE, COLOR_BLACK, FONT_SMALL);
+  }
+  
+  // Only update max_current1 if it changed
+  if (fabs(max_current1 - prev_max_current1) > 0.1 || !table_initialized || !update_only) {
+    snprintf(buffer, sizeof(buffer), "%.1f", max_current1);
+    tft_draw_string(table_x + first_cell_width + cell_width + 2, row_y + 10, buffer, COLOR_BLUE, COLOR_BLACK, FONT_SMALL);
+  }
+  
+  // Only update power1 if it changed
+  if (fabs(power1 - prev_power1) > 0.1 || !table_initialized || !update_only) {
+    snprintf(buffer, sizeof(buffer), "%.1f", power1);
+    tft_draw_string(table_x + first_cell_width + 2 * cell_width + 2, row_y, buffer, COLOR_RED, COLOR_BLACK, FONT_SMALL);
+  }
+  
+  // Only update max_power1 if it changed
+  if (fabs(max_power1 - prev_max_power1) > 0.1 || !table_initialized || !update_only) {
+    snprintf(buffer, sizeof(buffer), "%.1f", max_power1);
+    tft_draw_string(table_x + first_cell_width + 2 * cell_width + 2, row_y + 10, buffer, COLOR_RED, COLOR_BLACK, FONT_SMALL);
+  }
+  
+  // Sensor 2 data (row 3) - only draw if values changed
   row_y = table_y + 2 * row_height + 2;
-  tft_draw_string(table_x + 2, row_y, "2", COLOR_WHITE, COLOR_BLACK, FONT_SMALL);
-  tft_draw_string(table_x+2, row_y + 10, "Max", COLOR_WHITE, COLOR_BLACK, FONT_SMALL);
+  
+  // Only draw static elements on first initialization
+  if (!table_initialized || !update_only) {
+    tft_draw_string(table_x + 2, row_y, "2", COLOR_WHITE, COLOR_BLACK, FONT_SMALL);
+    tft_draw_string(table_x+2, row_y + 10, "Max", COLOR_WHITE, COLOR_BLACK, FONT_SMALL);
+  }
+  
+  // Only update voltage2 if it changed
+  if (fabs(voltage2 - prev_voltage2) > 0.01 || !table_initialized || !update_only) {
+    snprintf(buffer, sizeof(buffer), "%.2f", voltage2);
+    tft_draw_string(table_x + first_cell_width + 2, row_y, buffer, COLOR_GREEN, COLOR_BLACK, FONT_SMALL);
+  }
+  
+  // Only update max_voltage2 if it changed
+  if (fabs(max_voltage2 - prev_max_voltage2) > 0.01 || !table_initialized || !update_only) {
+    snprintf(buffer, sizeof(buffer), "%.2f", max_voltage2);
+    tft_draw_string(table_x + first_cell_width + 2, row_y + 10, buffer, COLOR_GREEN, COLOR_BLACK, FONT_SMALL);
+  }
+  
+  // Only update current2 if it changed
+  if (fabs(current2 - prev_current2) > 0.1 || !table_initialized || !update_only) {
+    snprintf(buffer, sizeof(buffer), "%.1f", current2);
+    tft_draw_string(table_x + first_cell_width + cell_width + 2, row_y, buffer, COLOR_BLUE, COLOR_BLACK, FONT_SMALL);
+  }
+  
+  // Only update max_current2 if it changed
+  if (fabs(max_current2 - prev_max_current2) > 0.1 || !table_initialized || !update_only) {
+    snprintf(buffer, sizeof(buffer), "%.1f", max_current2);
+    tft_draw_string(table_x + first_cell_width + cell_width + 2, row_y + 10, buffer, COLOR_BLUE, COLOR_BLACK, FONT_SMALL);
+  }
+  
+  // Only update power2 if it changed
+  if (fabs(power2 - prev_power2) > 0.1 || !table_initialized || !update_only) {
+    snprintf(buffer, sizeof(buffer), "%.1f", power2);
+    tft_draw_string(table_x + first_cell_width + 2 * cell_width + 2, row_y, buffer, COLOR_RED, COLOR_BLACK, FONT_SMALL);
+  }
+  
+  // Only update max_power2 if it changed
+  if (fabs(max_power2 - prev_max_power2) > 0.1 || !table_initialized || !update_only) {
+    snprintf(buffer, sizeof(buffer), "%.1f", max_power2);
+    tft_draw_string(table_x + first_cell_width + 2 * cell_width + 2, row_y + 10, buffer, COLOR_RED, COLOR_BLACK, FONT_SMALL);
+  }
+  // Only update filename if it changed (check less frequently)
+  static char prev_log_filename[128] = "";
+  if (strcmp(g_log_filename, prev_log_filename) != 0 || !table_initialized || !update_only) {
+    tft_draw_string(5,110, g_log_filename, COLOR_YELLOW, COLOR_BLACK, FONT_SMALL);
+    strcpy(prev_log_filename, g_log_filename);
+  }
 
-  snprintf(buffer, sizeof(buffer), "%.2f", voltage2);
-  tft_draw_string(table_x + first_cell_width + 2, row_y, buffer, COLOR_GREEN, COLOR_BLACK, FONT_SMALL);
-  snprintf(buffer, sizeof(buffer), "%.2f", max_voltage2);
-  tft_draw_string(table_x + first_cell_width + 2, row_y + 10, buffer, COLOR_GREEN, COLOR_BLACK, FONT_SMALL);
-  snprintf(buffer, sizeof(buffer), "%.1f", current2);
-  tft_draw_string(table_x + first_cell_width + cell_width + 2, row_y, buffer, COLOR_BLUE, COLOR_BLACK, FONT_SMALL);
-  snprintf(buffer, sizeof(buffer), "%.1f", max_current2);
-  tft_draw_string(table_x + first_cell_width + cell_width + 2, row_y + 10, buffer, COLOR_BLUE, COLOR_BLACK, FONT_SMALL);
-  snprintf(buffer, sizeof(buffer), "%.1f", power2);
-  tft_draw_string(table_x + first_cell_width + 2 * cell_width + 2, row_y, buffer, COLOR_RED, COLOR_BLACK, FONT_SMALL);
-  snprintf(buffer, sizeof(buffer), "%.1f", max_power2);
-  tft_draw_string(table_x + first_cell_width + 2 * cell_width + 2, row_y + 10, buffer, COLOR_RED, COLOR_BLACK, FONT_SMALL);
-  tft_draw_string(5,110, g_log_filename, COLOR_YELLOW, COLOR_BLACK, FONT_SMALL);
-
-  // Status indicator
-  tft_draw_string_centered(120, "Monitoring...", COLOR_YELLOW, COLOR_BLACK, FONT_SMALL);
+  // Status indicator - only update occasionally
+  static uint32_t status_update_counter = 0;
+  if (++status_update_counter % 10 == 0 || !table_initialized || !update_only) {
+    tft_draw_string_centered(120, "Monitoring...", COLOR_YELLOW, COLOR_BLACK, FONT_SMALL);
+  }
   
   // Store current values for next comparison
   prev_voltage1 = voltage1;
@@ -639,6 +703,14 @@ void tft_display_sensor_data_table(bool update_only,float voltage1, float curren
   prev_voltage2 = voltage2;
   prev_current2 = current2;
   prev_power2 = power2;
+  
+  // Store max values for next comparison
+  prev_max_voltage1 = max_voltage1;
+  prev_max_current1 = max_current1;
+  prev_max_power1 = max_power1;
+  prev_max_voltage2 = max_voltage2;
+  prev_max_current2 = max_current2;
+  prev_max_power2 = max_power2;
 }
 
 // Display sensor data (legacy function for single sensor)
